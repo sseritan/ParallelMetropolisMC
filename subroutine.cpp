@@ -39,7 +39,6 @@ float medium_orientation_parameter(const SimArray<float>& phi, int i, int j, int
 
 array<float, 100> histogram(const SimArray<float>& param);
 Dim2Array histogram2d(const SimArray<float>& Theta, const SimArray<float>& Phi);
-array<float, Lz/2> orientation_correlation(const SimArray<int>& S);
 array<float, 2> phase_data(const SimArray<int>& X, const SimArray<float>& Theta);
 
 int mc_acc(const double de);
@@ -443,38 +442,6 @@ Dim2Array histogram2d(const SimArray<float>& Theta, const SimArray<float>& Phi) 
   }
 
   return h;
-}
-
-//Calculate spatial correlation function for orientation
-//NOTE: An extruded checkerboard pattern would technically give perfect correlation by this formalism
-array<float, Lz/2> orientation_correlation(const SimArray<int>& S) {
-  //Initialize correlation array
-  array<float, Lz/2> correlation = {0.0};
-
-  //Run through orientation array
-  //For every particle in slice k=0, compare to same (i,j) in different k=r
-  //NOTE: For even Lz, I miss Lz/2 slice, for odd Lz, I miss Lz/2 and Lz/2+1, but whatever
-  for (int i = 0; i < Lx; i++) {
-    for (int j = 0; j < Ly; j++) {
-      for (int k = 0; k < Lz/2; k++) {
-        //Check in positive direction
-        if (S[i][j][0] == S[i][j][k]) {
-          correlation[k]++;
-        }
-        //Check in negative direction
-        if (S[i][j][0] == S[i][j][Lz-k]) {
-          correlation[k]++;
-        }
-      }
-    }
-  }
-
-  //Normalize correlations
-  for (float r : correlation) {
-    r = r/(float)(Lx*Ly*2);
-  }
-
-  return correlation;
 }
 
 //From the given respective CUTOFF value, calculate XA in the two phases (0 = A-rich, 1 = B-rich)

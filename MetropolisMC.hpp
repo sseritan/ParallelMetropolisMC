@@ -25,15 +25,12 @@
 //Hamiltonian definition
 #define K11 0.5
 #define K22 0.4
-#define K12 0.0
-#define A11 3.0
-#define A22 2.4
-#define A12 1.7
+#define A 3.0
 
 //Box size
 #define Lx 10
 #define Ly 10
-#define Lz 100
+#define Lz 10
 
 //Move probabilities
 #define ROTATION 0.5
@@ -43,8 +40,8 @@
 #define COMPA 1.0
 
 //Sweep information
-#define EQ_SWEEP 50000
-#define DATA_SWEEP 100000
+#define EQ_SWEEP 5000
+#define DATA_SWEEP 10000
 
 //Cutoff value for Theta to determine phases in a Solid-Solid Phase Diagram Run
 #define THETA_CUTOFF 0.5
@@ -57,8 +54,7 @@
 //2: Cutoff run (keep 2d histogram to find cutoff values that divide phases)
 //3: Solid-Solid Phase Diagram run (use THETA_CUTOFF to get XA for diff. phases)
 //4: Liquid-Solid Phase Diagram run (use PHI_CUTOFF to get XA for diff. phases)
-//5: Correlation run (keep correlation array)
-#define RUNTYPE 1
+#define RUNTYPE 2
 
 //Debugging flag will output a lot of information about individual moves
 //Recommend have only one sweep with a small box

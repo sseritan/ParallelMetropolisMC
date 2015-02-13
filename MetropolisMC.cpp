@@ -45,15 +45,13 @@ int main(int argc, char* argv[]) {
     cout << "Solid-Solid Phase Diagram" << endl;
   } else if (RUNTYPE == 4) {
     cout << "Liquid-Solid Phase Diagram" << endl;
-  } else if (RUNTYPE == 5) {
-    cout << "Spatial Orientation Correlation" << endl;
   }
 
   auto start_time = chrono::system_clock::to_time_t(chrono::system_clock::now());
   cout << "Started simulation on " << ctime(&start_time) << endl;
   cout << "Box Dimensions: " << Lx << "x" << Ly << "x" << Lz << endl;
   cout << "Temperature: " << kT << endl;
-  cout << "Hamiltonian: K11=" << K11 << " K22=" << K22 << " K12=" << K12 << " A11=" << A11 << " A22=" << A22 << " A12=" << A22 << endl;
+  cout << "Hamiltonian: K11=" << K11 << " K22=" << K22 << " A=" << A << endl;
   cout << "Move probabilities: Rotation=" << ROTATION << " Particle Swap=" << PARTSWAP << endl;
   cout << "Sweep information: Equilibration=" << EQ_SWEEP << " Data Gathering=" << DATA_SWEEP << endl;
   cout << "Seeding box with " << (int)floorf(COMPA*Lx*Ly*Lz) << " particles of species A" << endl;
@@ -104,8 +102,6 @@ int main(int argc, char* argv[]) {
   Dim2Array h;
   //Phase Diagram run variable
   array<float, 2> XA;
-  //Correlation run variable
-  array<float, Lz/2> corr;
 
   //Run through data sweeps (collecting data every sweep)
   cout << "*********************\nBeginning data sweeps\n*********************" << endl;
@@ -157,19 +153,6 @@ int main(int argc, char* argv[]) {
           XA[i] = (XA[i]*(t-1) + XANew[i])/(float)t;
         }
       }
-    } else if (RUNTYPE == 5) {
-      //Correlation run
-
-      //Get correlation array
-      array<float, Lz/2> corrNew = orientation_correlation(*S_ptr);
-
-      if (t == 1) {
-        corr = corrNew;
-      } else {
-        for (int i = 0; i < Lz/2; i++) {
-          corr[i] = (corr[i]*(t-1) + corrNew[i])/(float)t;
-        }
-      }
     }
 
     //Print snapshots every 10000 sweeps, just to see what's up
@@ -192,11 +175,6 @@ int main(int argc, char* argv[]) {
     cout << endl;
   } else if (RUNTYPE == 3 || RUNTYPE == 4) {
     cout << "XA (A-rich): " << XA[0] << " XA (B-rich):" << XA[1] << endl;
-  } else if (RUNTYPE == 5) {
-    cout << "Correlation(r): ";
-    for (float f : corr) {
-      cout << f << " ";
-    }
   }
 
   auto end_time = chrono::system_clock::to_time_t(chrono::system_clock::now());
