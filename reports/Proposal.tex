@@ -1,0 +1,25 @@
+\documentclass{article}
+
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{verbatim}
+
+\usepackage[top=1in, bottom=1.5in, left=1in, right=1in]{geometry}
+
+\usepackage{graphicx}
+
+\author{Wei Dai (CSIL: wdai, PERM: 6925747), Stefan Seritan (PERM: 5466644)}
+\date{\today}
+\title{CS140 Final Project Proposal:\\A Parallel Metropolis Monte Carlo Simulation}
+
+\begin{document}
+\maketitle
+
+\section*{Background}
+Simulations are a powerful tool to test and explore different chemical and physical models. In chemistry, two main types of simulations are utilized: Molecular Dynamics (MD) and Monte Carlo (MC). In MD simulations, an initial state is propagated through time to a final state using classical physics. The galactic evolution project (Homework 3) was an example of an MD-type simulation. Unlike MD simulations, Monte Carlo simulations are governed by statistical mechanics, not classical mechanics. As a result, MC simulations can perform unphysical moves, reaching equilibrium quickly (but losing any dynamic information). The principle of ergodicity states that the results of an MD and MC simulation will be the same if they are run for a sufficient time (i.e. time averages are equivalent to space averages); therefore, Monte Carlo simulations are perfect for calculating equilibrium properties quickly.\\
+Furthermore, parallelizing Monte Carlo simulations is much more tractable than parallelizing MD simulations. Since MD simulations are evolved through time, processors would need be synchronized for every time step, requiring a lot of communication (as we saw in Homework 3). MC simulations, on the other hand, have no concept of time, and therefore moves only need to be spatially localized. This is still a non-trivial problem, and one that we hope to elucidate in our final project.
+
+\section*{Simulation Details}
+We will be representing the system as a Potts Lattice Gas (PLG) model. Essentially, the PLG model means that particles are set on a 3D lattice and they have two attributes. The first attribute
+
+\end{document}
