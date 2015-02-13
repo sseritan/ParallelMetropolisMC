@@ -23,8 +23,7 @@
 #define Q 6
 
 //Hamiltonian definition
-#define K11 0.5
-#define K22 0.4
+#define K 0.5
 #define A 3.0
 
 //Box size

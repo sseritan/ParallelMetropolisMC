@@ -149,26 +149,16 @@ double energy(const SimArray<int>& X, const SimArray<int>& S) {
 double pairwise_energy(int m1, int m2, int s1, int s2) {
   double e = 0.0;
 
-  //Hamiltonian is -(K-A/Q) for id bonus, and -A for orientation bonus
+  //Hamiltonian is -K (if id eq) - A (if orient eq)
 
   //Identity bonus
   if (m1 == m2) {
-    e += ((m1 == 1) ? -(K11 - A11/Q) : -(K22 - A22/Q));
-  } else {
-    e += -(K12 - A12/Q);
+    e += -K;
   }
 
   //Orientation bonus
   if (s1 == s2) {
-    if (m1 == m2) {
-      if (m1 == 1) {
-        e += -A11;
-      } else {
-        e += -A22;
-      }
-    } else {
-      e += -A12;
-    }
+    e += -A;
   }
 
   return e;
