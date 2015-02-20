@@ -49,7 +49,7 @@ where $m(i)$ and $s(i)$ are the identity and orientation of particle $i$, and pa
 
 \section*{Results \& Applications}
 \vspace{-7pt}
-\indent\indent This simulation is designed to study the mixing of two species and how they separate into different phases. We use two order parameters to determine different phases. The local composition parameter ($\theta$) and local orientation parameter ($\phi$) are defined below, where $M$ is the number of nearest neighbors included. For our purposes, we will use $M=26$, which corresponds to all the particles within a $3\times3\times3$ cube centered on particle $i$.
+\indent\indent This simulation is designed to study the mixing of two species and how they separate into different phases. We use two order parameters to determine different phases. The local composition parameter ($\theta$) and local orientation parameter ($\phi$) are defined below, where $M$ is the number of nearest neighbors included. For our purposes, we will use $M=6$, which corresponds to the nearest neighbors (same as the energy calculation).
 $$\theta(i) = \frac{1}{2} + \frac{1}{2M}\sum_j^M\delta_{m(i),m(j)}\left(\delta_{m(j),1}-\delta_{m(j),2}\right)$$
 $$\phi(i) = \frac{1}{M}\sum_j^M\delta_{s(i),s(j)}$$
 $\theta$ ranges from 0 (pure species 2) to 1 (pure species 1), with the intermediate value of 0.5 representing a perfect mixture. $\phi$ also ranges from 0 (total disorder) to 1 (perfect solid). A liquid phase would have an expected value of $\frac{1}{6}$ rather than 0 since particles should sometimes randomly match orientation.\\
@@ -73,8 +73,21 @@ $$\Phi(i) = \frac{1}{M}\sum_j^M\phi(j)$$
 \item In the simplest formulation, proc 0 will wait for all current moves to finish executing and reset the dirty positions array
 \item Proc 0 will then restart move generation from the generated conflict until the next conflict
 \item For data collection, proc 0 will ensure that all moves are complete to avoid read races
-\item Data collection is a stencil computation and is easily parallelized by geometric division
+\subitem $\bullet$ $\theta$ and $\phi$ will already be updated on move acceptance
+\subitem $\bullet$ $\Theta$ and $\Phi$ are 7-point stencils that are easy to parallelize by geometric division
 \end{itemize}
 \indent\indent A more sophisticated version of the algorithm could do several things to avoid the downtime due to synchronization during conflicts. Firstly, worker procs can notify the master thread when a move is complete, removing it from the dirty array and reducing the chance of having active conflicts. Secondly, a conflicting move can be safely assigned so long as it does not conflict with moves on two separate processors. This is because on each worker thread the program is being executed in serial, and therefore there is no possibility for a data race if the conflicting moves are assigned to the same thread.
+
+\section*{Conclusion}
+\vspace{-7pt}
+In short, we will parallelize a Metropolis Monte Carlo simulation in the canonical ensemble, and look at several techniques for acceleration of the algorithm. Our goals for the final project are as follows:
+\begin{itemize}
+\item Successfully parallelize the algorithm through the basic proposed method described above
+\item Do basic benchmarking with the serial version to assess correctness, speedup, and parallel efficiency
+\item Experiment with improving the algorithm through the following methodologies
+\subitem $\bullet$ Allow procs to update the dirty array as moves are completed
+\subitem $\bullet$ Assign moves that only have one source of conflict to that corresponding processor
+\subitem $\bullet$ Calculating both local and medium range order parameters on move acceptance
+\end{itemize}
 
 \end{document}
