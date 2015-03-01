@@ -32,10 +32,6 @@
 #define ROTATION 0.5
 #define PARTSWAP 0.5
 
-//Debugging flag will output a lot of information about individual moves
-//Recommend have only one sweep with a small box
-#define DEBUGGING 0
-
 /* TEMPLATED DATA STRUCTURES */
 
 //Template class to make a 3d array
@@ -52,6 +48,7 @@ using Dim2Array = std::array<std::array<float, 100>, 100>;
 /* FUNCTION PROTOTYPES */
 //Main simulation functions
 void sweep(SimArray<int>& X, SimArray<int>& S, double& e, const double kT);
+int mod(int k, int n);
 
 //Energy related functions
 double energy(const SimArray<int>& X, const SimArray<int>& S);
@@ -73,10 +70,6 @@ std::array<float, 100> histogram(const SimArray<float>& param);
 Dim2Array histogram2d(const SimArray<float>& Theta, const SimArray<float>& Phi);
 std::array<float, 2> phase_data(const SimArray<int>& X, const SimArray<float>& param, const double cutoff);
 
-int mc_acc(const double de);
-int mod(int k, int n);
-int random_int(int a, int b);
-double rand01();
 
 //I/O Functions
 int parseArgs(int& rT, double& kT, int& eS, int& dS, double& cA, double& pC);

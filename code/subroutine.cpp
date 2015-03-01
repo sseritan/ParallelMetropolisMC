@@ -11,10 +11,10 @@
 #include <fstream>
 //Array include
 #include <array>
-//Stdlib include for srand
-#include <cstdlib>
 //Math include
 #include <cmath>
+//Random include
+#include <random>
 
 //Header include
 #include "MetropolisMC.hpp"
@@ -23,73 +23,59 @@ using namespace std;
 
 //Run full sweep (Lx*Ly*Lz MC moves)
 void sweep(SimArray<int>& X, SimArray<int>& S, double& e, const double kT) {
+  //Seed random number generator
+  random_device rd;
+  mt19937 gen(rd());
+  //Uniform int distribution for orientation
+  uniform_int_distribution<> randq(1,6);
+  //Uniform int distribution for lattice position
+  uniform_int_distribution<> randx(0, Lx-1);
+  uniform_int_distribution<> randy(0, Ly-1);
+  uniform_int_distribution<> randz(0, Lz-1);
+  //Uniform real distribution for acceptance and move decision
+  uniform_real_distribution<double> randr(0.0, 1.0);
+
   for (int t=0; t < Lx*Ly*Lz; t++) {
     //Pick random lattice point
-    int i = random_int(0, Lx-1);
-    int j = random_int(0, Ly-1);
-    int k = random_int(0, Lz-1);
-
-    if (DEBUGGING) {
-      cout << "i:" << i << " j:" << j << " k:" << k << " ";
-    }
+    int i = randx(gen);
+    int j = randy(gen);
+    int k = randz(gen);
 
     //Pick random number between 0 and 1 to determine move
-    double m = rand01();
+    double m = randr(gen);
 
     //Choose move depending on m
     if (m < ROTATION) {
       //Rotation move
       //Pick new orientation
-      int q = random_int(1, Q);
+      int q = randq(gen);
 
       //Calculate energy change for chosen rotation
       double de = rotation_energy_change(X, S, i, j, k, q)/kT;
 
-      //Get acceptance
-      int acc = mc_acc(de);
-
-      //Print out move information if DEBUGGING flag set
-      if (DEBUGGING) {
-        cout << "Rot: qOrg=" << S[i][j][k] << " q=" << q << " de=" << de << (acc ? " Accepted" : " Rejected");
-      }
-
       //Check whether to accept or not
-      if (acc) {
+      if (randr(gen) < exp(-de)) {
         //Accept move. Update orientation and energy
         S[i][j][k] = q;
         e += de;
       }
     } else if (m > ROTATION && m < (ROTATION+PARTSWAP)) {
       //Pick random particle to swap with
-      int ii = random_int(0, Lx-1);
-      int jj = random_int(0, Ly-1);
-      int kk = random_int(0, Lz-1);
+      int ii = randx(gen);
+      int jj = randy(gen);
+      int kk = randz(gen);
 
       //Get change in energy associated with switching particles
       double de = particle_swap_energy_change(X, S, i, j, k, ii, jj, kk)/kT;
 
-      //Get acceptance
-      int acc = mc_acc(de);
-
-      //Print out move information if DEBUGGING flag set
-      if (DEBUGGING) {
-        cout << " ii:" << ii << " jj:" << jj << " kk:" << kk;
-        cout << " PartSwap: m1=" << X[i][j][k] << " m2=" << X[ii][jj][kk] << " s1=" << S[i][j][k] <<
-          " s2=" << S[ii][jj][kk] << " de=" << de << (acc ? " Accepted" : " Rejected");
-      }
-
       //Check whether to accept move or not
-      if (acc) {
+      if (randr(gen) < exp(-de)) {
         //Accept move. Update orientation and energy
         int x = X[i][j][k]; int s = S[i][j][k];
         X[i][j][k] = X[ii][jj][kk]; S[i][j][k] = S[ii][jj][kk];
         X[ii][jj][kk] = x; S[ii][jj][kk] = s;
         e += de;
       }
-    }
-
-    if (DEBUGGING) {
-      cout << endl;
     }
   }
 }
@@ -439,23 +425,6 @@ array<float, 2> phase_data(const SimArray<int>& X, const SimArray<float>& param,
   return XA;
 }
 
-//Metropolis Monte Carlo acceptance criteria. Returns 1 if accepted, 0 if rejected.
-int mc_acc(const double de) {
-  //Get random cutoff number
-  double r = rand01();
-
-  if (DEBUGGING) {
-    cout << " r: " << r << " exp(-de): " << exp(-de);
-  }
-
-  //Accept if greater than r
-  if (r < exp(-de)) {
-    return 1;
-  }
-
-  return 0;
-}
-
 //Modified modulus function that guarantees periodic boundary conditions
 int mod(int k, int n) {
   //Keep k between 0 and n-1
@@ -467,19 +436,6 @@ int mod(int k, int n) {
   }
 
   return k;
-}
-
-//Baron's random integer generator
-int random_int(int a, int b) {
-  //Return a random number in the given range [a,b]
-  return (rand()%(b-a+1) + a);
-}
-
-//Baron's random double in interval [0,1] generator
-double rand01() {
-  int max = 1000000;
-  int r = random_int(1, max);
-  return ((double)r-0.5)/(double)max;
 }
 
 //Print out lattice to VMD_snapshot.txt

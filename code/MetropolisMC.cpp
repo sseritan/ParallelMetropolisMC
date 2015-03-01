@@ -14,10 +14,9 @@
 
 //I/O includes
 #include <iostream>
-#include <sstream>
 //Array include
 #include <array>
-//Stdlib include for srand
+//Stdlib include for atoi, atof
 #include <cstdlib>
 //Math include
 #include <cmath>
@@ -52,11 +51,13 @@ int main(int argc, char* argv[]) {
     eqSweeps = atoi(argv[3]);
     dataSweeps = atoi(argv[4]);
     compA = (double)atof(argv[5]);
-    if (runType >= 3 && argc == 7) {
-      paramCutoff = (double)atof(argv[6]);
-    } else {
-      cout << "No cutoff value specified." << endl;
-      exit(1);
+    if (runType >= 3) {
+      if (argc == 7) {
+        paramCutoff = (double)atof(argv[6]);
+      } else {
+        cout << "No cutoff value specified." << endl;
+        exit(1);
+      }
     }
   }
 
@@ -88,11 +89,6 @@ int main(int argc, char* argv[]) {
     cout << "Using " << ((runType == 3) ? "Theta" : "Phi") << " cutoff value of " << paramCutoff << endl;
   }
 
-  //Initialize random number generator
-  auto seed = chrono::high_resolution_clock::now().time_since_epoch().count();
-  cout << "Using seed " << seed << " for srand()." << endl;
-  srand(seed);
-
   //Initialize identity and orientation arrays
   SimArray<int>* X_ptr = new SimArray<int>;
   SimArray<int>* S_ptr = new SimArray<int>;
@@ -122,7 +118,7 @@ int main(int argc, char* argv[]) {
       cout << "Equilibration sweep " << t << "/" << eqSweeps;
 
       //Print energy (updated and fresh)
-      cout << " E/kT(updated)=" << e <<" E/kT(direct)=" << energy(*X_ptr, *S_ptr)/kT << endl;
+      cout << " E/kT(updated)=" << e << endl;
     }
   }
 
