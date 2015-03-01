@@ -21,36 +21,8 @@
 
 using namespace std;
 
-/* FUNCTION PROTOTYPES */
-void sweep(SimArray<int>& X, SimArray<int>& S, double& e);
-
-double energy(const SimArray<int>& X, const SimArray<int>& S);
-double pairwise_energy(int m1, int m2, int s1, int s2);
-double point_energy(const SimArray<int>& X, const SimArray<int>& S, int i, int j, int k);
-double rotation_energy_change(const SimArray<int>& X, SimArray<int>& S, int i, int j, int k, int q);
-double particle_swap_energy_change(SimArray<int>& X, SimArray<int>& S, int i, int j, int k, int ii, int jj, int kk);
-
-SimArray<float> phase_parameter(const SimArray<int>& X);
-float local_phase_parameter(const SimArray<int>& X, int i, int j, int k);
-float medium_phase_parameter(const SimArray<float>& theta, int i, int j, int k);
-SimArray<float> orientation_parameter(const SimArray<int>& S);
-float local_orientation_parameter(const SimArray<int>& S, int i, int j, int k);
-float medium_orientation_parameter(const SimArray<float>& phi, int i, int j, int k);
-
-array<float, 100> histogram(const SimArray<float>& param);
-Dim2Array histogram2d(const SimArray<float>& Theta, const SimArray<float>& Phi);
-array<float, 2> phase_data(const SimArray<int>& X, const SimArray<float>& Theta);
-
-int mc_acc(const double de);
-int mod(int k, int n);
-int random_int(int a, int b);
-double rand01();
-
-void print_VMD_snapshot(SimArray<int>& X, SimArray<int>& S, int t);
-
-/* FUNCTION DEFINITIONS */
 //Run full sweep (Lx*Ly*Lz MC moves)
-void sweep(SimArray<int>& X, SimArray<int>& S, double& e) {
+void sweep(SimArray<int>& X, SimArray<int>& S, double& e, const double kT) {
   for (int t=0; t < Lx*Ly*Lz; t++) {
     //Pick random lattice point
     int i = random_int(0, Lx-1);
@@ -435,17 +407,15 @@ Dim2Array histogram2d(const SimArray<float>& Theta, const SimArray<float>& Phi) 
 }
 
 //From the given respective CUTOFF value, calculate XA in the two phases (0 = A-rich, 1 = B-rich)
-array<float, 2> phase_data(const SimArray<int>& X, const SimArray<float>& param) {
+array<float, 2> phase_data(const SimArray<int>& X, const SimArray<float>& param, const double cutoff) {
   //Temporary number arrays (total and A in both phases
   array<int, 2> n = {0, 0}; array<int, 2> nA = {0, 0};
 
   //Count and get numbers for both phases
-  //Note the ternary operator lets me do both cases (by Theta or by Phi)
-  //This is because large Theta and large Phi both correspond to the A-rich phase (given my Hamiltonian)
   for (int i = 0; i < Lx; i++) {
     for (int j = 0; j < Ly; j++) {
       for (int k = 0; k < Lz; k++) {
-        if (param[i][j][k] >= ((RUNTYPE == 3) ? THETA_CUTOFF : PHI_CUTOFF)) {
+        if (param[i][j][k] >= cutoff) {
           n[0]++;
           if (X[i][j][k] == 1) {
             nA[0]++;
@@ -473,11 +443,6 @@ array<float, 2> phase_data(const SimArray<int>& X, const SimArray<float>& param)
 int mc_acc(const double de) {
   //Get random cutoff number
   double r = rand01();
-
-  //If probability of acceptance is smaller than machine precision, reject
-  if (de*kT > 999.0) {
-    return 0;
-  }
 
   if (DEBUGGING) {
     cout << " r: " << r << " exp(-de): " << exp(-de);

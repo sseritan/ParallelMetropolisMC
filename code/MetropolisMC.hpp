@@ -4,7 +4,7 @@
 // Modified by Stefan Seritan and Wei Dai for CS 140 Final Project Winter 2015
 //
 // Header file for MetropolisMC and subroutine
-// Includes simulation parameters and templated data structures
+// Includes simulation parameters, templated data structures, and function prototypes
 //
 //
 
@@ -16,44 +16,21 @@
 
 /* SIMULATION PARAMETERS */
 
-//Temperature
-#define kT 3.0
-
 //Orientations
 #define Q 6
 
-//Hamiltonian definition
-#define K 0.5
-#define A 3.0
-
-//Box size
+//Lattice Size
 #define Lx 10
 #define Ly 10
-#define Lz 10
+#define Lz 100
+
+//Hamiltonian definition
+#define K 0.5
+#define A 1.0
 
 //Move probabilities
 #define ROTATION 0.5
 #define PARTSWAP 0.5
-
-//Composition (total fraction that is A)
-#define COMPA 1.0
-
-//Sweep information
-#define EQ_SWEEP 5000
-#define DATA_SWEEP 10000
-
-//Cutoff value for Theta to determine phases in a Solid-Solid Phase Diagram Run
-#define THETA_CUTOFF 0.5
-
-//Cutoff value for Phi to determine phases in a Liquid-Solid Phase Diagram Run
-#define PHI_CUTOFF 0.5
-
-//Parameter that determines what info is kept
-//1: MeltingPoint run (keep energy, COMP should be 0.0 or 1.0)
-//2: Cutoff run (keep 2d histogram to find cutoff values that divide phases)
-//3: Solid-Solid Phase Diagram run (use THETA_CUTOFF to get XA for diff. phases)
-//4: Liquid-Solid Phase Diagram run (use PHI_CUTOFF to get XA for diff. phases)
-#define RUNTYPE 2
 
 //Debugging flag will output a lot of information about individual moves
 //Recommend have only one sweep with a small box
@@ -71,6 +48,39 @@ using SimArray = Dim3Array<T, Lx, Ly, Lz>;
 
 //Specific 2D array for the 2d histogram
 using Dim2Array = std::array<std::array<float, 100>, 100>;
+
+/* FUNCTION PROTOTYPES */
+//Main simulation functions
+void sweep(SimArray<int>& X, SimArray<int>& S, double& e, const double kT);
+
+//Energy related functions
+double energy(const SimArray<int>& X, const SimArray<int>& S);
+double pairwise_energy(int m1, int m2, int s1, int s2);
+double point_energy(const SimArray<int>& X, const SimArray<int>& S, int i, int j, int k);
+double rotation_energy_change(const SimArray<int>& X, SimArray<int>& S, int i, int j, int k, int q);
+double particle_swap_energy_change(SimArray<int>& X, SimArray<int>& S, int i, int j, int k, int ii, int jj, int kk);
+
+//Order parameter related functions
+SimArray<float> phase_parameter(const SimArray<int>& X);
+float local_phase_parameter(const SimArray<int>& X, int i, int j, int k);
+float medium_phase_parameter(const SimArray<float>& theta, int i, int j, int k);
+SimArray<float> orientation_parameter(const SimArray<int>& S);
+float local_orientation_parameter(const SimArray<int>& S, int i, int j, int k);
+float medium_orientation_parameter(const SimArray<float>& phi, int i, int j, int k);
+
+//Data collection related functions
+std::array<float, 100> histogram(const SimArray<float>& param);
+Dim2Array histogram2d(const SimArray<float>& Theta, const SimArray<float>& Phi);
+std::array<float, 2> phase_data(const SimArray<int>& X, const SimArray<float>& param, const double cutoff);
+
+int mc_acc(const double de);
+int mod(int k, int n);
+int random_int(int a, int b);
+double rand01();
+
+//I/O Functions
+int parseArgs(int& rT, double& kT, int& eS, int& dS, double& cA, double& pC);
+void print_VMD_snapshot(SimArray<int>& X, SimArray<int>& S, int t);
 
 #endif
 

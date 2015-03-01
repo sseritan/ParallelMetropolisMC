@@ -12,8 +12,9 @@
 /*        HYBRID POTTS-LATTICE GAS MODEL           */
 /***************************************************/
 
-//I/O include
+//I/O includes
 #include <iostream>
+#include <sstream>
 //Array include
 #include <array>
 //Stdlib include for srand
@@ -34,27 +35,58 @@ int main(int argc, char* argv[]) {
   //Set output precision
   cout.precision(2); cout << fixed;
 
+  int runType, eqSweeps, dataSweeps;
+  double kT, compA, paramCutoff;
+  if (argc < 6) {
+    cout << "Usage:\n./MetropolisMC <Run Type> <Temp> <Eq. Sweeps> <Data Sweeps> <\%A> [<Cutoff>]" << endl;
+    cout << "Run Types:" << endl;
+    cout << "1) Melting Temperature. Only energy is kept." << endl;
+    cout << "2) 2D Cutoff. Histogram of (Theta, Phi) is kept." << endl;
+    cout << "3) Solid-Solid Phase Diagram. XA is calculated for two phases, using the cutoff value for Theta." << endl;
+    cout << "4) Liquid-Solid Phase Diagram. XA is calculated for two phases, using the cutoff value for Phi." << endl;
+    exit(1);
+  } else {
+    //Parse arguments
+    runType = atoi(argv[1]);
+    kT = (double)atof(argv[2]);
+    eqSweeps = atoi(argv[3]);
+    dataSweeps = atoi(argv[4]);
+    compA = (double)atof(argv[5]);
+    if (runType >= 3 && argc == 7) {
+      paramCutoff = (double)atof(argv[6]);
+    } else {
+      cout << "No cutoff value specified." << endl;
+      exit(1);
+    }
+  }
+
   //Print out simulation information
   cout << "SIMULATION DETAILS" << endl;
   cout << "Type of simulation: ";
-  if (RUNTYPE == 1) {
+  if (runType == 1) {
     cout << "Melting Temperature" << endl;
-  } else if (RUNTYPE == 2) {
+  } else if (runType == 2) {
     cout << "Cutoff (2D)" << endl;
-  } else if (RUNTYPE == 3) {
+  } else if (runType == 3) {
     cout << "Solid-Solid Phase Diagram" << endl;
-  } else if (RUNTYPE == 4) {
+  } else if (runType == 4) {
     cout << "Liquid-Solid Phase Diagram" << endl;
+  } else {
+    cout << "Invalid run type." << endl;
+    exit(1);
   }
 
   auto start_time = chrono::system_clock::to_time_t(chrono::system_clock::now());
   cout << "Started simulation on " << ctime(&start_time) << endl;
   cout << "Box Dimensions: " << Lx << "x" << Ly << "x" << Lz << endl;
   cout << "Temperature: " << kT << endl;
-  cout << "Hamiltonian: K11=" << K11 << " K22=" << K22 << " A=" << A << endl;
+  cout << "Hamiltonian: K=" << K << " A=" << A << endl;
   cout << "Move probabilities: Rotation=" << ROTATION << " Particle Swap=" << PARTSWAP << endl;
-  cout << "Sweep information: Equilibration=" << EQ_SWEEP << " Data Gathering=" << DATA_SWEEP << endl;
-  cout << "Seeding box with " << (int)floorf(COMPA*Lx*Ly*Lz) << " particles of species A" << endl;
+  cout << "Sweep information: Equilibration=" << eqSweeps << " Data Gathering=" << dataSweeps << endl;
+  cout << "Seeding box with " << (int)floorf(compA*Lx*Ly*Lz) << " particles of species A" << endl;
+  if (runType >= 3) {
+    cout << "Using " << ((runType == 3) ? "Theta" : "Phi") << " cutoff value of " << paramCutoff << endl;
+  }
 
   //Initialize random number generator
   auto seed = chrono::high_resolution_clock::now().time_since_epoch().count();
@@ -62,7 +94,6 @@ int main(int argc, char* argv[]) {
   srand(seed);
 
   //Initialize identity and orientation arrays
-  //(Allocated on heap)
   SimArray<int>* X_ptr = new SimArray<int>;
   SimArray<int>* S_ptr = new SimArray<int>;
 
@@ -70,7 +101,7 @@ int main(int argc, char* argv[]) {
     for(int j=0; j<Ly; j++) {
       for(int k=0; k<Lz; k++) {
         //Seed identity so that target composition is met
-        (*X_ptr)[i][j][k] = ((k<COMPA*Lz) ? 1 : 2);
+        (*X_ptr)[i][j][k] = ((k<compA*Lz) ? 1 : 2);
         //Uniform orientation
         (*S_ptr)[i][j][k] = 1;
       }
@@ -82,13 +113,13 @@ int main(int argc, char* argv[]) {
   cout << "\nInitial energy (E/kT): " << e << endl;
 
   //Run through equilibration sweeps
-  for (int t=1; t <= EQ_SWEEP; t++) {
+  for (int t=1; t <= eqSweeps; t++) {
     //Run one full sweep
-    sweep(*X_ptr, *S_ptr, e);
+    sweep(*X_ptr, *S_ptr, e, kT);
 
     //Print out equilibration data
-    if (t <= EQ_SWEEP && t%100 == 0) {
-      cout << "Equilibration sweep " << t << "/" << EQ_SWEEP;
+    if (t%100 == 0) {
+      cout << "Equilibration sweep " << t << "/" << eqSweeps;
 
       //Print energy (updated and fresh)
       cout << " E/kT(updated)=" << e <<" E/kT(direct)=" << energy(*X_ptr, *S_ptr)/kT << endl;
@@ -105,11 +136,11 @@ int main(int argc, char* argv[]) {
 
   //Run through data sweeps (collecting data every sweep)
   cout << "*********************\nBeginning data sweeps\n*********************" << endl;
-  for (int t = 1; t <= DATA_SWEEP; t++) {
+  for (int t = 1; t <= dataSweeps; t++) {
     //Run one full sweep
-    sweep(*X_ptr, *S_ptr, e);
+    sweep(*X_ptr, *S_ptr, e, kT);
 
-    if (RUNTYPE == 1) {
+    if (runType == 1) {
       //Melting Temp run
 
       if (t == 1) {
@@ -118,7 +149,7 @@ int main(int argc, char* argv[]) {
       } else {
         eAvg = (eAvg*(t-1) + e)/(float)t;
       }
-    } else if (RUNTYPE == 2) {
+    } else if (runType == 2) {
       //Cutoff run
 
       //Calculate phase and orientation parameters
@@ -137,14 +168,14 @@ int main(int argc, char* argv[]) {
           }
         }
       }
-    } else if (RUNTYPE == 3 || RUNTYPE == 4) {
+    } else if (runType == 3 || runType == 4) {
       //Solid-Solid or Liquid-Solid Phase diagram run
 
       //Calculate phase parameters (based on type of run)
-      SimArray<float> param = ((RUNTYPE == 3) ? phase_parameter(*X_ptr) : orientation_parameter(*S_ptr));
+      SimArray<float> param = ((runType == 3) ? phase_parameter(*X_ptr) : orientation_parameter(*S_ptr));
 
       //Get phase composition data
-      array<float, 2> XANew = phase_data(*X_ptr, param);
+      array<float, 2> XANew = phase_data(*X_ptr, param, paramCutoff);
 
       if (t == 1) {
         XA = XANew;
@@ -155,17 +186,19 @@ int main(int argc, char* argv[]) {
       }
     }
 
+    /*
     //Print snapshots every 10000 sweeps, just to see what's up
     if (t%10000 == 0) {
       cout << "Printing VMD snapshot at " << t << " data sweeps." << endl;
       print_VMD_snapshot(*X_ptr, *S_ptr, t);
     }
+    */
   }
 
   //Print out information collected in data sweeps
-  if (RUNTYPE == 1) {
+  if (runType == 1) {
     cout << "Average energy (E/kT): " << eAvg << endl;
-  } else if (RUNTYPE == 2) {
+  } else if (runType == 2) {
     cout << "2D Histogram:";
     for (auto a : h) {
       for (float f : a) {
@@ -173,7 +206,7 @@ int main(int argc, char* argv[]) {
       }
     }
     cout << endl;
-  } else if (RUNTYPE == 3 || RUNTYPE == 4) {
+  } else if (runType == 3 || runType == 4) {
     cout << "XA (A-rich): " << XA[0] << " XA (B-rich):" << XA[1] << endl;
   }
 
