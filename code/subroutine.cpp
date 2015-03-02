@@ -13,8 +13,10 @@
 #include <array>
 //Math include
 #include <cmath>
+//Vector include
+#include <vector>
 //Random include
-#include <random>
+#include <cstdlib>
 
 //Header include
 #include "MetropolisMC.hpp"
@@ -23,53 +25,41 @@ using namespace std;
 
 //Run full sweep (Lx*Ly*Lz MC moves)
 void sweep(SimArray<int>& X, SimArray<int>& S, double& e, const double kT) {
-  //Seed random number generator
-  random_device rd;
-  mt19937 gen(rd());
-  //Uniform int distribution for orientation
-  uniform_int_distribution<> randq(1,6);
-  //Uniform int distribution for lattice position
-  uniform_int_distribution<> randx(0, Lx-1);
-  uniform_int_distribution<> randy(0, Ly-1);
-  uniform_int_distribution<> randz(0, Lz-1);
-  //Uniform real distribution for acceptance and move decision
-  uniform_real_distribution<double> randr(0.0, 1.0);
-
   for (int t=0; t < Lx*Ly*Lz; t++) {
     //Pick random lattice point
-    int i = randx(gen);
-    int j = randy(gen);
-    int k = randz(gen);
+    int i = rand()%Lx;
+    int j = rand()%Ly;
+    int k = rand()%Lz;
 
     //Pick random number between 0 and 1 to determine move
-    double m = randr(gen);
+    double m = (double)rand()/(double)RAND_MAX;
 
     //Choose move depending on m
     if (m < ROTATION) {
       //Rotation move
       //Pick new orientation
-      int q = randq(gen);
+      int q = rand()%6 + 1;
 
       //Calculate energy change for chosen rotation
       double de = rotation_energy_change(S, i, j, k, q)/kT;
 
       //Check whether to accept or not
-      if (randr(gen) < exp(-de)) {
+      if ((double)rand()/(double)RAND_MAX < exp(-de)) {
         //Accept move. Update orientation and energy
         S[i][j][k] = q;
         e += de;
       }
     } else if (m > ROTATION && m < (ROTATION+PARTSWAP)) {
       //Pick random particle to swap with
-      int ii = randx(gen);
-      int jj = randy(gen);
-      int kk = randz(gen);
+      int ii = rand()%Lx;
+      int jj = rand()%Ly;
+      int kk = rand()%Lz;
 
       //Get change in energy associated with switching particles
       double de = particle_swap_energy_change(X, S, i, j, k, ii, jj, kk)/kT;
 
       //Check whether to accept move or not
-      if (randr(gen) < exp(-de)) {
+      if ((double)rand()/(double)RAND_MAX < exp(-de)) {
         //Accept move. Update orientation and energy
         int x = X[i][j][k]; int s = S[i][j][k];
         X[i][j][k] = X[ii][jj][kk]; S[i][j][k] = S[ii][jj][kk];
