@@ -36,41 +36,20 @@ int main(int argc, char* argv[]) {
 
   int runType, eqSweeps, dataSweeps;
   double kT, compA, cutoff;
-  if (argc < 6) {
-    cout << "Usage:\n./MetropolisMC <Run Type> <Temp> <Eq. Sweeps> <Data Sweeps> <\%A> [<Cutoff>]" << endl;
-    cout << "Run Types:" << endl;
-    cout << "1) Melting Temperature. Only energy is kept." << endl;
-    cout << "2) Phase Diagram. XA is calculated for two phases, using the cutoff value for Theta." << endl;
+  if (argc != 6) {
+    cout << "Usage:\n./MetropolisMC <Temp> <Eq. Sweeps> <Data Sweeps> <\%A> <Cutoff>" << endl;
     exit(1);
   } else {
     //Parse arguments
-    runType = atoi(argv[1]);
-    kT = (double)atof(argv[2]);
-    eqSweeps = atoi(argv[3]);
-    dataSweeps = atoi(argv[4]);
-    compA = (double)atof(argv[5]);
-    if (runType >= 3) {
-      if (argc == 7) {
-        cutoff = (double)atof(argv[6]);
-      } else {
-        cout << "No cutoff value specified." << endl;
-        exit(1);
-      }
-    }
+    kT = (double)atof(argv[1]);
+    eqSweeps = atoi(argv[2]);
+    dataSweeps = atoi(argv[3]);
+    compA = (double)atof(argv[4]);
+    cutoff = (double)atof(argv[5]);
   }
 
   //Print out simulation information
   cout << "SIMULATION DETAILS" << endl;
-  cout << "Type of simulation: ";
-  if (runType == 1) {
-    cout << "Melting Temperature" << endl;
-  } else if (runType == 2) {
-    cout << "Phase Diagram" << endl;
-  } else {
-    cout << "Invalid run type." << endl;
-    exit(1);
-  }
-
   auto start_time = chrono::system_clock::to_time_t(chrono::system_clock::now());
   cout << "Started simulation on " << ctime(&start_time) << endl;
   cout << "Box Dimensions: " << Lx << "x" << Ly << "x" << Lz << endl;
@@ -79,9 +58,7 @@ int main(int argc, char* argv[]) {
   cout << "Move probabilities: Rotation=" << ROTATION << " Particle Swap=" << PARTSWAP << endl;
   cout << "Sweep information: Equilibration=" << eqSweeps << " Data Gathering=" << dataSweeps << endl;
   cout << "Seeding box with " << (int)floorf(compA*Lx*Ly*Lz) << " particles of species A" << endl;
-  if (runType == 2) {
-    cout << "Using Theta cutoff value of " << cutoff << endl;
-  }
+  cout << "Using Theta cutoff value of " << cutoff << endl;
 
   //Initialize identity and orientation arrays
   SimArray<int>* X_ptr = new SimArray<int>;
@@ -128,30 +105,21 @@ int main(int argc, char* argv[]) {
     //Run one full sweep
     sweep(*X_ptr, *S_ptr, e, kT);
 
-    if (runType == 1) {
-      //Melting Temp run
+    //Calculate Theta
+    SimArray<double> Theta = phase_parameter(*X_ptr);
 
-      if (t == 1) {
-        //Initialize energy
-        eAvg = e;
-      } else {
-        eAvg = (eAvg*(t-1) + e)/(double)t;
-      }
-    } else if (runType == 222) {
-      //Phase Diagram run
+    //Calculate phase compositions from Theta and cutoff value
+    array<double, 2> XANew = phase_data(*X_ptr, Theta, cutoff);
 
-      //Calculate phase parameters
-      SimArray<double> Theta = phase_parameter(*X_ptr);
-
-      //Get phase composition data
-      array<double, 2> XANew = phase_data(*X_ptr, Theta, cutoff);
-
-      if (t == 1) {
-        XA = XANew;
-      } else {
-        for (int i = 0; i < 2; i++) {
-          XA[i] = (XA[i]*(double)(t-1) + XANew[i])/(double)t;
-        }
+    if (t == 1) {
+      //Initialize data
+      eAvg = e;
+      XA = XANew;
+    } else {
+      //Keep running avg of data
+      eAvg = (eAvg*(t-1) + e)/(double)t;
+      for (int i = 0; i < 2; i++) {
+        XA[i] = (XA[i]*(t-1) + XANew[i])/(double)t;
       }
     }
 
@@ -165,11 +133,8 @@ int main(int argc, char* argv[]) {
   }
 
   //Print out information collected in data sweeps
-  if (runType == 1) {
-    cout << "Average energy (E/kT): " << eAvg << endl;
-  } else if (runType == 2) {
-    cout << "XA (A-rich): " << XA[0] << " XA (B-rich):" << XA[1] << endl;
-  }
+  cout << "Average energy (E/kT): " << eAvg << endl;
+  cout << "XA (A-rich): " << XA[0] << " XA (B-rich):" << XA[1] << endl;
 
   auto end_time = chrono::system_clock::to_time_t(chrono::system_clock::now());
   cout << "\nFinished simulation on " << ctime(&end_time) << endl;
