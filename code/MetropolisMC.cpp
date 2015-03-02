@@ -37,12 +37,13 @@ int main(int argc, char* argv[]) {
   int runType, eqSweeps, dataSweeps;
   double kT, compA, cutoff;
   if (argc != 6) {
-    cout << "Usage:\n./MetropolisMC <Temp> <Eq. Sweeps> <Data Sweeps> <\%A> <Cutoff>" << endl;
+    cout << "Usage:\n./MetropolisMC <Temp> <Eq. Sweeps> <Data Sweeps> <CompA> <Cutoff>" << endl;
     cout << "Temp is kT. Acceptance is based on exp(-energy/kT). Higher kT basically allows less favored moves still get accepted, equivalent to higher temperature." << endl;
     cout << "Eq. Sweeps is the number of sweeps to reach equilibrium (no data collected). Equilibrium reached when energy doesn't change." << endl;
     cout << "Data. Sweeps is the number of sweeps where we collect energy and phase data between sweeps. More data sweeps, the better the collected statistics (weak law of large numbers)." << endl;
-    cout << "\%A is a number between 0 and 1 that sets an initial fraction of the identities to 1 (species A)." << endl;
-    cout << "Cutoff is the number we use to separate phases. Theta values above cutoff are one phase, values below are the other phase." << endl;
+    cout << "CompA is a number between 0 and 1 that sets an initial fraction of the identities to 1 (species A)." << endl;
+    cout << "Cutoff is the number we use to separate phases. Theta values above cutoff are one phase, values below are the other phase.\n"
+     "For the symmetric Hamiltonian, it should be the same value as CompA." << endl;
     exit(1);
   } else {
     //Parse arguments
@@ -64,6 +65,11 @@ int main(int argc, char* argv[]) {
   cout << "Sweep information: Equilibration=" << eqSweeps << " Data Gathering=" << dataSweeps << endl;
   cout << "Seeding box with " << (int)floorf(compA*Lx*Ly*Lz) << " particles of species A" << endl;
   cout << "Using Theta cutoff value of " << cutoff << endl;
+
+  //Initialize random number generator
+  auto seed = chrono::high_resolution_clock::now().time_since_epoch().count();
+  cout << "Using seed " << seed << " for srand()." << endl;
+  srand(seed);
 
   //Initialize identity and orientation arrays
   SimArray<int>* X_ptr = new SimArray<int>;
