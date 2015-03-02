@@ -103,21 +103,15 @@ double energy(const SimArray<int>& X, const SimArray<int>& S) {
   return e;
 }
 
-//Calculate the energy between two particles
+//Calculate the energy between two particles (e = -K dm(i)m(j) -A ds(i)s(j)
 double pairwise_energy(int m1, int m2, int s1, int s2) {
   double e = 0.0;
 
-  //Hamiltonian is -K (if id eq) - A (if orient eq)
-
   //Identity bonus
-  if (m1 == m2) {
-    e += -K;
-  }
+  if (m1 == m2) e += -K;
 
   //Orientation bonus
-  if (s1 == s2) {
-    e += -A;
-  }
+  if (s1 == s2) e += -A;
 
   return e;
 }
@@ -135,35 +129,40 @@ double point_energy(const SimArray<int>& X, const SimArray<int>& S, int i, int j
   return e;
 }
 
-double rotation_energy_change(const SimArray<int>& S, int i, int j, int k, int qNew) {
+//Calculate the energy in a rotation move
+double rotation_energy_change(const SimArray<int>& S, int i, int j, int k, int q2) {
   //Store original orientation
-  int qOrig = S[i][j][k];
+  int q1 = S[i][j][k];
 
-  //Store neighboring orientations for ease
-  vector<int> o;
-  o.push_back(S[mod(i-1,Lx)][j][k]);
-  o.push_back(S[mod(i+1,Lx)][j][k]);
-  o.push_back(S[i][mod(j-1,Ly)][k]);
-  o.push_back(S[i][mod(j+1,Ly)][k]);
-  o.push_back(S[i][j][mod(k-1,Lz)]);
-  o.push_back(S[i][j][mod(k+1,Lz)]);
+  int qOrig = 0, qNew = 0;
+  //Only calculate if it actually makes a difference
+  if (q1 != q2) {
+    //Store neighboring orientations for ease
+    vector<int> o;
+    o.push_back(S[mod(i-1,Lx)][j][k]);
+    o.push_back(S[mod(i+1,Lx)][j][k]);
+    o.push_back(S[i][mod(j-1,Ly)][k]);
+    o.push_back(S[i][mod(j+1,Ly)][k]);
+    o.push_back(S[i][j][mod(k-1,Lz)]);
+    o.push_back(S[i][j][mod(k+1,Lz)]);
 
-  //Count number of orientation matches in both cases
-  int cOrig = 0, cNew = 0;
-  for (int q : o) {
-    if (q == qOrig) {
-      cOrig++;
-    }
-    if (q == qNew) {
-      cNew++;
+    //Count number of orientation matches in both cases
+    for (int q : o) {
+      if (q == q1) {
+        qOrig++;
+      }
+      if (q == q2) {
+        qNew++;
+      }
     }
   }
 
-  //Energy change = -A(cNew - cOrig)
-  return A*(cOrig - cNew);
+  //Energy change = -A(qNew - qOrig)
+  return A*(qOrig - qNew);
 }
 
-//Calculate the energy change for switching particles at positions (i,j,k) and (ii,jj,kk)
+//Calculate energy in a particle swap move
+//Note that this is not the most efficient, but not bottleneck
 double particle_swap_energy_change(SimArray<int>& X, SimArray<int>& S, int i, int j, int k, int ii, int jj, int kk) {
   //Calculate energy with original orientation
   double e1 = point_energy(X, S, i, j, k) + point_energy(X, S, ii, jj, kk);
@@ -185,6 +184,7 @@ double particle_swap_energy_change(SimArray<int>& X, SimArray<int>& S, int i, in
 
   return (e2-e1);
 }
+
 
 //Calculate full arrays for phase parameters (TODO: Highly parallelizable) TODO: Fix return by value?
 SimArray<double> phase_parameter(const SimArray<int>& X) {
