@@ -51,7 +51,7 @@ void sweep(SimArray<int>& X, SimArray<int>& S, double& e, const double kT) {
       int q = randq(gen);
 
       //Calculate energy change for chosen rotation
-      double de = rotation_energy_change(X, S, i, j, k, q)/kT;
+      double de = rotation_energy_change(S, i, j, k, q)/kT;
 
       //Check whether to accept or not
       if (randr(gen) < exp(-de)) {
@@ -135,22 +135,32 @@ double point_energy(const SimArray<int>& X, const SimArray<int>& S, int i, int j
   return e;
 }
 
-//Calculate the energy change for assuming the orientation q at position (i,j,k)
-double rotation_energy_change(const SimArray<int>& X, SimArray<int>& S, int i, int j, int k, int q) {
-  //Calculate energy with original orientation (with 6 nearest neighbors)
-  double e1 = point_energy(X, S, i, j, k);
+double rotation_energy_change(const SimArray<int>& S, int i, int j, int k, int qNew) {
+  //Store original orientation
+  int qOrig = S[i][j][k];
 
-  //Save original orientation, and update with new orientation
-  int qOrg = S[i][j][k];
-  S[i][j][k] = q;
+  //Store neighboring orientations for ease
+  vector<int> o;
+  o.push_back(S[mod(i-1,Lx)][j][k]);
+  o.push_back(S[mod(i+1,Lx)][j][k]);
+  o.push_back(S[i][mod(j-1,Ly)][k]);
+  o.push_back(S[i][mod(j+1,Ly)][k]);
+  o.push_back(S[i][j][mod(k-1,Lz)]);
+  o.push_back(S[i][j][mod(k+1,Lz)]);
 
-  //Calculate energy with new orientation
-  double e2 = point_energy(X, S, i, j, k);
+  //Count number of orientation matches in both cases
+  int cOrig = 0, cNew = 0;
+  for (int q : o) {
+    if (q == qOrig) {
+      cOrig++;
+    }
+    if (q == qNew) {
+      cNew++;
+    }
+  }
 
-  //Restore old orientation
-  S[i][j][k] = qOrg;
-
-  return (e2-e1);
+  //Energy change = -A(cNew - cOrig)
+  return A*(cOrig - cNew);
 }
 
 //Calculate the energy change for switching particles at positions (i,j,k) and (ii,jj,kk)

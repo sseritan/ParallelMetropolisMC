@@ -22,7 +22,7 @@
 //Lattice Size
 #define Lx 10
 #define Ly 10
-#define Lz 100
+#define Lz 10
 
 //Hamiltonian definition
 #define K 0.5
@@ -54,7 +54,7 @@ int mod(int k, int n);
 double energy(const SimArray<int>& X, const SimArray<int>& S);
 double pairwise_energy(int m1, int m2, int s1, int s2);
 double point_energy(const SimArray<int>& X, const SimArray<int>& S, int i, int j, int k);
-double rotation_energy_change(const SimArray<int>& X, SimArray<int>& S, int i, int j, int k, int q);
+double rotation_energy_change(const SimArray<int>& S, int i, int j, int k, int qNew);
 double particle_swap_energy_change(SimArray<int>& X, SimArray<int>& S, int i, int j, int k, int ii, int jj, int kk);
 
 //Order parameter related functions
