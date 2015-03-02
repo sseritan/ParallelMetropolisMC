@@ -5,4 +5,4 @@ MetropolisMC: MetropolisMC.cpp MetropolisMC.hpp subroutine.cpp
 	$(CC) $(CFLAGS) MetropolisMC.cpp -o MetropolisMC
 
 clean:
-	rm *.o MetropolismC
+	rm MetropolisMC
