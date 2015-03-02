@@ -185,7 +185,6 @@ double particle_swap_energy_change(SimArray<int>& X, SimArray<int>& S, int i, in
   return (e2-e1);
 }
 
-
 //Calculate full arrays for phase parameters (TODO: Highly parallelizable) TODO: Fix return by value?
 SimArray<double> phase_parameter(const SimArray<int>& X) {
   //Initialize temp arrays

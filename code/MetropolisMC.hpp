@@ -70,7 +70,6 @@ std::array<double, 100> histogram(const SimArray<double>& param);
 Dim2Array histogram2d(const SimArray<double>& Theta, const SimArray<double>& Phi);
 std::array<double, 2> phase_data(const SimArray<int>& X, const SimArray<double>& param, const double cutoff);
 
-
 //I/O Functions
 void print_VMD_snapshot(SimArray<int>& X, SimArray<int>& S, int t);
 
