@@ -38,6 +38,11 @@ int main(int argc, char* argv[]) {
   double kT, compA, cutoff;
   if (argc != 6) {
     cout << "Usage:\n./MetropolisMC <Temp> <Eq. Sweeps> <Data Sweeps> <\%A> <Cutoff>" << endl;
+    cout << "Temp is kT. Acceptance is based on exp(-energy/kT). Higher kT basically allows less favored moves still get accepted, equivalent to higher temperature." << endl;
+    cout << "Eq. Sweeps is the number of sweeps to reach equilibrium (no data collected). Equilibrium reached when energy doesn't change." << endl;
+    cout << "Data. Sweeps is the number of sweeps where we collect energy and phase data between sweeps. More data sweeps, the better the collected statistics (weak law of large numbers)." << endl;
+    cout << "\%A is a number between 0 and 1 that sets an initial fraction of the identities to 1 (species A)." << endl;
+    cout << "Cutoff is the number we use to separate phases. Theta values above cutoff are one phase, values below are the other phase." << endl;
     exit(1);
   } else {
     //Parse arguments
