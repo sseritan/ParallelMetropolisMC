@@ -128,7 +128,7 @@ int main(int argc, char* argv[]) {
   //Cutoff run variable
   Dim2Array h;
   //Phase Diagram run variable
-  array<float, 2> XA;
+  array<double, 2> XA;
 
   //Run through data sweeps (collecting data every sweep)
   cout << "*********************\nBeginning data sweeps\n*********************" << endl;
@@ -143,14 +143,14 @@ int main(int argc, char* argv[]) {
         //Initialize energy
         eAvg = e;
       } else {
-        eAvg = (eAvg*(t-1) + e)/(float)t;
+        eAvg = (eAvg*(t-1) + e)/(double)t;
       }
     } else if (runType == 2) {
       //Cutoff run
 
       //Calculate phase and orientation parameters
-      SimArray<float> Theta = phase_parameter(*X_ptr);
-      SimArray<float> Phi = orientation_parameter(*S_ptr);
+      SimArray<double> Theta = phase_parameter(*X_ptr);
+      SimArray<double> Phi = orientation_parameter(*S_ptr);
 
       if (t == 1) {
         //Get 2D histogram
@@ -160,7 +160,7 @@ int main(int argc, char* argv[]) {
         auto hNew = histogram2d(Theta, Phi);
         for (int i = 0; i < 100; i++) {
           for (int j = 0; j < 100; j++) {
-            h[i][j] = (h[i][j]*(t-1) + hNew[i][j])/(float)t;
+            h[i][j] = (h[i][j]*(t-1) + hNew[i][j])/(double)t;
           }
         }
       }
@@ -168,16 +168,16 @@ int main(int argc, char* argv[]) {
       //Solid-Solid or Liquid-Solid Phase diagram run
 
       //Calculate phase parameters (based on type of run)
-      SimArray<float> param = ((runType == 3) ? phase_parameter(*X_ptr) : orientation_parameter(*S_ptr));
+      SimArray<double> param = ((runType == 3) ? phase_parameter(*X_ptr) : orientation_parameter(*S_ptr));
 
       //Get phase composition data
-      array<float, 2> XANew = phase_data(*X_ptr, param, paramCutoff);
+      array<double, 2> XANew = phase_data(*X_ptr, param, paramCutoff);
 
       if (t == 1) {
         XA = XANew;
       } else {
         for (int i = 0; i < 2; i++) {
-          XA[i] = (XA[i]*(t-1) + XANew[i])/(float)t;
+          XA[i] = (XA[i]*(t-1) + XANew[i])/(double)t;
         }
       }
     }
@@ -197,11 +197,11 @@ int main(int argc, char* argv[]) {
   } else if (runType == 2) {
     cout << "2D Histogram:";
     for (auto a : h) {
-      for (float f : a) {
+      for (double f : a) {
         cout << f << " ";
       }
+      cout << endl;
     }
-    cout << endl;
   } else if (runType == 3 || runType == 4) {
     cout << "XA (A-rich): " << XA[0] << " XA (B-rich):" << XA[1] << endl;
   }

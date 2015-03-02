@@ -177,9 +177,9 @@ double particle_swap_energy_change(SimArray<int>& X, SimArray<int>& S, int i, in
 }
 
 //Calculate full arrays for phase parameters (TODO: Highly parallelizable) TODO: Fix return by value?
-SimArray<float> phase_parameter(const SimArray<int>& X) {
+SimArray<double> phase_parameter(const SimArray<int>& X) {
   //Initialize temp arrays
-  SimArray<float> theta, Theta;
+  SimArray<double> theta, Theta;
 
   //Calculate theta from x
   for (int i = 0; i < Lx; i++) {
@@ -204,9 +204,9 @@ SimArray<float> phase_parameter(const SimArray<int>& X) {
 
 //Calculate theta, the local order parameter for determining phase
 //From V. Argawal and B. Peters, J. Chem. Phys. 140, 084111
-float local_phase_parameter(const SimArray<int>& X, int i, int j, int k) {
+double local_phase_parameter(const SimArray<int>& X, int i, int j, int k) {
   //Initialize parameter
-  float theta = 0.5;
+  double theta = 0.5;
 
   //Sum over nearest, next-nearest, and next-next-neighbors (3x3x3 cube)
   int id = X[i][j][k];
@@ -242,9 +242,9 @@ float local_phase_parameter(const SimArray<int>& X, int i, int j, int k) {
 
 //Calculate Theta, the medium order parameter for determining phase (average of theta)
 //From V. Agarwal and B. Peters, J. Chem. Phys. 140, 084111
-float medium_phase_parameter(const SimArray<float>& theta, int i, int j, int k) {
+double medium_phase_parameter(const SimArray<double>& theta, int i, int j, int k) {
   //Initialize parameter
-  float Theta = 0.0;
+  double Theta = 0.0;
 
   //Run through array and take average over 3x3x3 cube
   for (int ip = -1; ip <= 1; ip++) {
@@ -260,9 +260,9 @@ float medium_phase_parameter(const SimArray<float>& theta, int i, int j, int k) 
 }
 
 //Calculate full arrays of the orientation parameters //TODO:Fix return by value?
-SimArray<float> orientation_parameter(const SimArray<int>& S) {
+SimArray<double> orientation_parameter(const SimArray<int>& S) {
   //Initialize temp arrays
-  SimArray<float> phi, Phi;
+  SimArray<double> phi, Phi;
 
   //Calculate phi from s
   for (int i = 0; i < Lx; i++) {
@@ -286,9 +286,9 @@ SimArray<float> orientation_parameter(const SimArray<int>& S) {
 }
 
 //Calculate the local orientation parameter (based on local phase parameter)
-float local_orientation_parameter(const SimArray<int>& S, int i, int j, int k) {
+double local_orientation_parameter(const SimArray<int>& S, int i, int j, int k) {
   //Initialize variable
-  float phi = 0.0;
+  double phi = 0.0;
 
   //Save orientation of (i,j,k)
   int q = S[i][j][k];
@@ -310,9 +310,9 @@ float local_orientation_parameter(const SimArray<int>& S, int i, int j, int k) {
 }
 
 //Calculate the medium orientation parameter (based on medium phase parameter)
-float medium_orientation_parameter(const SimArray<float>& phi, int i, int j, int k) {
+double medium_orientation_parameter(const SimArray<double>& phi, int i, int j, int k) {
   //Initialize variable
-  float Phi = 0.0;
+  double Phi = 0.0;
 
   //Run through phi array
   for (int a = -1; a <= 1; a++) {
@@ -328,9 +328,9 @@ float medium_orientation_parameter(const SimArray<float>& phi, int i, int j, int
 }
 
 //Make a histogram of an order parameter
-array<float, 100> histogram(const SimArray<float>& param) {
+array<double, 100> histogram(const SimArray<double>& param) {
   //Initialize array to all zeroes
-  array<float, 100> h = {0.0};
+  array<double, 100> h = {0.0};
 
   //Run through parameter array
   for (int i = 0; i < Lx; i++) {
@@ -352,15 +352,16 @@ array<float, 100> histogram(const SimArray<float>& param) {
 
   //Normalize histogram
   for (int i = 0; i < 100; i++) {
-    h[i] = h[i]/(float)(Lx*Ly*Lz);
+    h[i] = h[i]/(double)(Lx*Ly*Lz);
   }
 
   return h;
 }
 
-Dim2Array histogram2d(const SimArray<float>& Theta, const SimArray<float>& Phi) {
+//TODO: Fix this. Broken
+Dim2Array histogram2d(const SimArray<double>& Theta, const SimArray<double>& Phi) {
   //Initialize 2d histogram
-  Dim2Array h = {{0.0}};
+  Dim2Array h = {{}};
 
   for (int i = 0; i < Lx; i++) {
     for (int j = 0; j < Ly; j++) {
@@ -384,8 +385,8 @@ Dim2Array histogram2d(const SimArray<float>& Theta, const SimArray<float>& Phi) 
 
   //Normalize histogram
   for (auto a : h) {
-    for (float f : a) {
-      f = f/(float)(Lx*Ly*Lz);
+    for (double f : a) {
+      f /= (double)(Lx*Ly*Lz);
     }
   }
 
@@ -393,9 +394,10 @@ Dim2Array histogram2d(const SimArray<float>& Theta, const SimArray<float>& Phi) 
 }
 
 //From the given respective CUTOFF value, calculate XA in the two phases (0 = A-rich, 1 = B-rich)
-array<float, 2> phase_data(const SimArray<int>& X, const SimArray<float>& param, const double cutoff) {
+array<double, 2> phase_data(const SimArray<int>& X, const SimArray<double>& param, const double cutoff) {
   //Temporary number arrays (total and A in both phases
-  array<int, 2> n = {0, 0}; array<int, 2> nA = {0, 0};
+  array<int, 2> n = {0, 0};
+  array<int, 2> nA = {0, 0};
 
   //Count and get numbers for both phases
   for (int i = 0; i < Lx; i++) {
@@ -417,9 +419,9 @@ array<float, 2> phase_data(const SimArray<int>& X, const SimArray<float>& param,
   }
 
   //Calculate mole fraction in both phases
-  array<float, 2> XA;
+  array<double, 2> XA;
   for (int i = 0; i < 2; i++) {
-    XA[i] = (float)nA[i]/(float)n[i];
+    XA[i] = (double)nA[i]/(double)n[i];
   }
 
   return XA;

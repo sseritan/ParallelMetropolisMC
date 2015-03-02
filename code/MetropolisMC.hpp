@@ -43,7 +43,7 @@ template <typename T>
 using SimArray = Dim3Array<T, Lx, Ly, Lz>;
 
 //Specific 2D array for the 2d histogram
-using Dim2Array = std::array<std::array<float, 100>, 100>;
+using Dim2Array = std::array<std::array<double, 100>, 100>;
 
 /* FUNCTION PROTOTYPES */
 //Main simulation functions
@@ -58,21 +58,20 @@ double rotation_energy_change(const SimArray<int>& X, SimArray<int>& S, int i, i
 double particle_swap_energy_change(SimArray<int>& X, SimArray<int>& S, int i, int j, int k, int ii, int jj, int kk);
 
 //Order parameter related functions
-SimArray<float> phase_parameter(const SimArray<int>& X);
-float local_phase_parameter(const SimArray<int>& X, int i, int j, int k);
-float medium_phase_parameter(const SimArray<float>& theta, int i, int j, int k);
-SimArray<float> orientation_parameter(const SimArray<int>& S);
-float local_orientation_parameter(const SimArray<int>& S, int i, int j, int k);
-float medium_orientation_parameter(const SimArray<float>& phi, int i, int j, int k);
+SimArray<double> phase_parameter(const SimArray<int>& X);
+double local_phase_parameter(const SimArray<int>& X, int i, int j, int k);
+double medium_phase_parameter(const SimArray<double>& theta, int i, int j, int k);
+SimArray<double> orientation_parameter(const SimArray<int>& S);
+double local_orientation_parameter(const SimArray<int>& S, int i, int j, int k);
+double medium_orientation_parameter(const SimArray<double>& phi, int i, int j, int k);
 
 //Data collection related functions
-std::array<float, 100> histogram(const SimArray<float>& param);
-Dim2Array histogram2d(const SimArray<float>& Theta, const SimArray<float>& Phi);
-std::array<float, 2> phase_data(const SimArray<int>& X, const SimArray<float>& param, const double cutoff);
+std::array<double, 100> histogram(const SimArray<double>& param);
+Dim2Array histogram2d(const SimArray<double>& Theta, const SimArray<double>& Phi);
+std::array<double, 2> phase_data(const SimArray<int>& X, const SimArray<double>& param, const double cutoff);
 
 
 //I/O Functions
-int parseArgs(int& rT, double& kT, int& eS, int& dS, double& cA, double& pC);
 void print_VMD_snapshot(SimArray<int>& X, SimArray<int>& S, int t);
 
 #endif
