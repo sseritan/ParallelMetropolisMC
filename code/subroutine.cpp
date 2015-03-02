@@ -185,7 +185,7 @@ double particle_swap_energy_change(SimArray<int>& X, SimArray<int>& S, int i, in
   return (e2-e1);
 }
 
-//Calculate full arrays for phase parameters (TODO: Highly parallelizable) TODO: Fix return by value?
+//Calculate full arrays for phase parameters (TODO: Highly parallelizable)
 SimArray<double> phase_parameter(const SimArray<int>& X) {
   //Initialize temp arrays
   SimArray<double> theta, Theta;
@@ -266,140 +266,6 @@ double medium_phase_parameter(const SimArray<double>& theta, int i, int j, int k
 
   //Average out Theta
   return Theta/27.0;
-}
-
-//Calculate full arrays of the orientation parameters //TODO:Fix return by value?
-SimArray<double> orientation_parameter(const SimArray<int>& S) {
-  //Initialize temp arrays
-  SimArray<double> phi, Phi;
-
-  //Calculate phi from s
-  for (int i = 0; i < Lx; i++) {
-    for (int j = 0; j < Ly; j++) {
-      for (int k = 0; k < Lz; k++) {
-        phi[i][j][k] = local_orientation_parameter(S, i, j, k);
-      }
-    }
-  }
-
-  //Calculate Phi from phi
-  for (int i = 0; i < Lx; i++) {
-    for (int j = 0; j < Ly; j++) {
-      for (int k = 0; k < Lz; k++) {
-        Phi[i][j][k] = medium_orientation_parameter(phi, i, j, k);
-      }
-    }
-  }
-
-  return Phi;
-}
-
-//Calculate the local orientation parameter (based on local phase parameter)
-double local_orientation_parameter(const SimArray<int>& S, int i, int j, int k) {
-  //Initialize variable
-  double phi = 0.0;
-
-  //Save orientation of (i,j,k)
-  int q = S[i][j][k];
-  for (int a = -1; a <= 1; a++) {
-    for (int b = -1; b <= 1; b++) {
-      for (int c = -1; c <= 1; c++) {
-        if (q == S[mod(i+a, Lx)][mod(j+b, Ly)][mod(k+c, Lz)]) {
-          phi += 1.0;
-        }
-      }
-    }
-  }
-
-  //Remove overcounting of center
-  phi += -1.0;
-
-  //Average out phi
-  return phi/26.0;
-}
-
-//Calculate the medium orientation parameter (based on medium phase parameter)
-double medium_orientation_parameter(const SimArray<double>& phi, int i, int j, int k) {
-  //Initialize variable
-  double Phi = 0.0;
-
-  //Run through phi array
-  for (int a = -1; a <= 1; a++) {
-    for (int b = -1; b <= 1; b++) {
-      for (int c = -1; c <= 1; c++) {
-        Phi += phi[i][j][k];
-      }
-    }
-  }
-
-  //Average out Phi
-  return Phi/27.0;
-}
-
-//Make a histogram of an order parameter
-array<double, 100> histogram(const SimArray<double>& param) {
-  //Initialize array to all zeroes
-  array<double, 100> h = {0.0};
-
-  //Run through parameter array
-  for (int i = 0; i < Lx; i++) {
-    for (int j = 0; j < Ly; j++) {
-      for (int k = 0; k < Lz; k++) {
-        //Truncate parameter at 2nd decimal place to get bin
-        int index = floorf(param[i][j][k]*100);
-
-        //1.00 will return 100, but 99 is max bin
-        if (index > 99) {
-          index = 99;
-        }
-
-        //Add 1 to corresponding bin
-        h[index] += 1;
-      }
-    }
-  }
-
-  //Normalize histogram
-  for (int i = 0; i < 100; i++) {
-    h[i] = h[i]/(double)(Lx*Ly*Lz);
-  }
-
-  return h;
-}
-
-//TODO: Fix this. Broken
-Dim2Array histogram2d(const SimArray<double>& Theta, const SimArray<double>& Phi) {
-  //Initialize 2d histogram
-  Dim2Array h = {{}};
-
-  for (int i = 0; i < Lx; i++) {
-    for (int j = 0; j < Ly; j++) {
-      for (int k = 0; k < Lz; k++) {
-        int ThetaIndex = floorf(Theta[i][j][k]*100);
-        int PhiIndex = floorf(Phi[i][j][k]*100);
-
-        //Make sure not out of bounds
-        if (ThetaIndex > 99) {
-          ThetaIndex = 99;
-        }
-        if (PhiIndex > 99) {
-          PhiIndex = 99;
-        }
-
-        //Increment histogram. Theta is x, so inner level
-        h[PhiIndex][ThetaIndex] += 1.0;
-      }
-    }
-  }
-
-  //Normalize histogram
-  for (auto a : h) {
-    for (double f : a) {
-      f /= (double)(Lx*Ly*Lz);
-    }
-  }
-
-  return h;
 }
 
 //From the given respective CUTOFF value, calculate XA in the two phases (0 = A-rich, 1 = B-rich)

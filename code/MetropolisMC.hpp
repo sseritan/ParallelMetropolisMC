@@ -61,14 +61,9 @@ double particle_swap_energy_change(SimArray<int>& X, SimArray<int>& S, int i, in
 SimArray<double> phase_parameter(const SimArray<int>& X);
 double local_phase_parameter(const SimArray<int>& X, int i, int j, int k);
 double medium_phase_parameter(const SimArray<double>& theta, int i, int j, int k);
-SimArray<double> orientation_parameter(const SimArray<int>& S);
-double local_orientation_parameter(const SimArray<int>& S, int i, int j, int k);
-double medium_orientation_parameter(const SimArray<double>& phi, int i, int j, int k);
 
 //Data collection related functions
-std::array<double, 100> histogram(const SimArray<double>& param);
-Dim2Array histogram2d(const SimArray<double>& Theta, const SimArray<double>& Phi);
-std::array<double, 2> phase_data(const SimArray<int>& X, const SimArray<double>& param, const double cutoff);
+std::array<double, 2> phase_data(const SimArray<int>& X, const SimArray<double>& Theta, const double cutoff);
 
 //I/O Functions
 void print_VMD_snapshot(SimArray<int>& X, SimArray<int>& S, int t);
