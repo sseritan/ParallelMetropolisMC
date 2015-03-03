@@ -101,34 +101,34 @@ int check_conflicts(SimArray<int>& Y, Move* move, int pc) {
   if (move->type) { // swap
     for (int i = 0; i < 3; i++) {
       for (int j = -1; j <= 1; j += 2) {
-        cell = Y[(move->cell0[0] + (i==2)*j + Lx)%Lx][(move->cell0[1] +
-            (i==1)*j + Ly)%Ly][(move->cell0[2] + (i==0)*j + Lz)%Lz];
+        cell = Y[mod(move->cell0[0] + (i==2)*j, Lx)][mod(move->cell0[1] +
+            (i==1)*j, Ly)][mod(move->cell0[2] + (i==0)*j, Lz)];
+        /* cout << "cell coordinates: " << mod(move->cell0[0] + (i==2)*j, Lx) << */
+        /*   ", " << mod(move->cell0[1] + (i==1)*j, Ly) << ", " << */
+        /*   mod(move->cell0[2] + (i==0)*j, Lz) << endl; */
+        /* cout << "cell content: " << cell << endl; */
         if (cell) {
           if (conflict_processor and (conflict_processor != cell)) {
             return -1; // more than one conflicts!
           } else {
             conflict_processor = cell;
-            /* cout << "cell coordinates: " << (move->cell0[0] + (i==2)*j + Lx)%Lx */
-            /*   << ", " << (move->cell0[1] + (i==1)*j + Ly)%Ly << ", " << */
-            /*   (move->cell0[2] + (i==0)*j + Lz)%Lz << endl; */
-            /* cout << "cell content: " << cell << endl; */
           }
         }
       }
     }
     for (int i = 0; i < 3; i++) {
       for (int j = -1; j <= 1; j += 2) {
-        cell = Y[(move->cell1[0] + (i==2)*j + Lx)%Lx][(move->cell1[1] +
-            (i==1)*j + Ly)%Ly][(move->cell1[2] + (i==0)*j + Lz)%Lz];
+        cell = Y[mod(move->cell1[0] + (i==2)*j, Lx)][mod(move->cell1[1] +
+            (i==1)*j, Ly)][mod(move->cell1[2] + (i==0)*j, Lz)];
+        /* cout << "cell coordinates: " << mod(move->cell1[0] + (i==2)*j, Lx) << */
+        /*   ", " << mod(move->cell1[1] + (i==1)*j, Ly) << ", " << */
+        /*   mod(move->cell1[2] + (i==0)*j, Lz) << endl; */
+        /* cout << "cell content: " << cell << endl; */
         if (cell) {
           if (conflict_processor and (conflict_processor != cell)) {
             return -1; // more than one conflicts!
           } else {
             conflict_processor = cell;
-            /* cout << "cell coordinates: " << (move->cell1[0] + (i==2)*j + Lx)%Lx */
-            /*   << ", " << (move->cell1[1] + (i==1)*j + Ly)%Ly << ", " << */
-            /*   (move->cell1[2] + (i==0)*j + Lz)%Lz << endl; */
-            /* cout << "cell content: " << cell << endl; */
           }
         }
       }
@@ -136,32 +136,32 @@ int check_conflicts(SimArray<int>& Y, Move* move, int pc) {
     if (conflict_processor > 0) pc = conflict_processor;
     for (int i = 0; i < 3; i++) {
       for (int j = -1; j <= 1; j += 2) {
-        Y[(move->cell0[0] + (i==2)*j)%Lx][(move->cell0[1] +
-            (i==1)*j)%Ly][(move->cell0[2] + (i==0)*j)%Lz] = pc;
+        Y[mod(move->cell0[0] + (i==2)*j, Lx)][mod(move->cell0[1] +
+            (i==1)*j, Ly)][mod(move->cell0[2] + (i==0)*j, Lz)] = pc;
         /* cout << "set cell to " << pc << endl; */
       }
     }
     for (int i = 0; i < 3; i++) {
       for (int j = -1; j <= 1; j += 2) {
-        Y[(move->cell1[0] + (i==2)*j)%Lx][(move->cell1[1] +
-            (i==1)*j)%Ly][(move->cell1[2] + (i==0)*j)%Lz] = pc;
+        Y[mod(move->cell1[0] + (i==2)*j, Lx)][mod(move->cell1[1] +
+            (i==1)*j, Ly)][mod(move->cell1[2] + (i==0)*j, Lz)] = pc;
         /* cout << "set cell to " << pc << endl; */
       }
     }
   } else { // rotation
     for (int i = 0; i < 3; i++) {
       for (int j = -1; j <= 1; j += 2) {
-        cell = Y[(move->cell0[0] + (i==2)*j + Lx)%Lx][(move->cell0[1] +
-            (i==1)*j + Ly)%Ly][(move->cell0[2] + (i==0)*j + Lz)%Lz];
+        cell = Y[mod(move->cell0[0] + (i==2)*j, Lx)][mod(move->cell0[1] +
+            (i==1)*j, Ly)][mod(move->cell0[2] + (i==0)*j, Lz)];
+        /* cout << "cell coordinates: " << mod(move->cell0[0] + (i==2)*j, Lx) << */
+        /*   ", " << mod(move->cell0[1] + (i==1)*j, Ly) << ", " << */
+        /*   mod(move->cell0[2] + (i==0)*j, Lz) << endl; */
+        /* cout << "cell content: " << cell << endl; */
         if (cell) {
           if (conflict_processor and (conflict_processor != cell)) {
             return -1; // more than one conflicts!
           } else {
             conflict_processor = cell;
-            /* cout << "cell coordinates: " << (move->cell0[0] + (i==2)*j + Lx)%Lx */
-            /*   << ", " << (move->cell0[1] + (i==1)*j + Ly)%Ly << ", " << */
-            /*   (move->cell0[2] + (i==0)*j + Lz)%Lz << endl; */
-            /* cout << "cell content: " << cell << endl; */
           }
         }
       }
@@ -169,8 +169,8 @@ int check_conflicts(SimArray<int>& Y, Move* move, int pc) {
     if (conflict_processor > 0) pc = conflict_processor;
     for (int i = 0; i < 3; i++) {
       for (int j = -1; j <= 1; j += 2) {
-        Y[(move->cell0[0] + (i==2)*j)%Lx][(move->cell0[1] +
-            (i==1)*j)%Ly][(move->cell0[2] + (i==0)*j)%Lz] = pc;
+        Y[mod(move->cell0[0] + (i==2)*j, Lx)][mod(move->cell0[1] +
+            (i==1)*j, Ly)][mod(move->cell0[2] + (i==0)*j, Lz)] = pc;
         /* cout << "set cell to " << pc << endl; */
       }
     }
@@ -182,17 +182,20 @@ int check_conflicts(SimArray<int>& Y, Move* move, int pc) {
 void sweep(vector<Move>* M, SimArray<int>& X, SimArray<int>& S, double& e, const double kT) {
   /* cout << "sweep" << endl; */
   int m = Lx*Ly*Lz;
+  int count = 0;
 
   // Y is used to keep track of move assignment
   SimArray<int>* Y_ptr = new SimArray<int>;
 
   while (m > 0) { // until we do enough moves
+    count++;
 
     gen_moves(*Y_ptr, M, m);
 
     /* cout << "moves left for this sweep: " << m << endl; */
 
     for (int i = 0; i < np; i++) {
+      /* cout << "making moves for i = " << i << endl; */
       while (M[i].size() > 0) {
         Move move = M[i].back();
         M[i].pop_back();
@@ -235,6 +238,7 @@ void sweep(vector<Move>* M, SimArray<int>& X, SimArray<int>& S, double& e, const
       }
     }
   }
+  /* cout << "average batch size: " << Lx*Ly*Lz / count << endl; */
   delete Y_ptr;
 }
 
