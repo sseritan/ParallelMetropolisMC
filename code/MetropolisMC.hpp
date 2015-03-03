@@ -24,7 +24,7 @@
 //Lattice Size
 #define Lx 10
 #define Ly 10
-#define Lz 10
+#define Lz 100
 
 //Hamiltonian definition
 #define K 0.5
@@ -34,7 +34,7 @@
 #define ROTATION 0.5
 #define PARTSWAP 0.5
 
-#define np 4
+#define np 100
 
 /* TEMPLATED DATA STRUCTURES */
 

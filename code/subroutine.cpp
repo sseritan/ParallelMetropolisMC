@@ -17,6 +17,7 @@
 #include <vector>
 //Random include
 #include <cstdlib>
+#include <cilk/cilk.h>
 
 //Header include
 #include "MetropolisMC.hpp"
@@ -194,7 +195,7 @@ void sweep(vector<Move>* M, SimArray<int>& X, SimArray<int>& S, double& e, const
 
     /* cout << "moves left for this sweep: " << m << endl; */
 
-    for (int i = 0; i < np; i++) {
+    cilk_for (int i = 0; i < np; i++) {
       /* cout << "making moves for i = " << i << endl; */
       while (M[i].size() > 0) {
         Move move = M[i].back();
