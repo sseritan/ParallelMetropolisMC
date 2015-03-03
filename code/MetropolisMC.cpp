@@ -75,6 +75,9 @@ int main(int argc, char* argv[]) {
   SimArray<int>* X_ptr = new SimArray<int>;
   SimArray<int>* S_ptr = new SimArray<int>;
 
+  //Initialize array for checking conflicts
+  vector<Move>* M = new vector<Move>[np];
+
   for(int i=0; i<Lx; i++) {
     for(int j=0; j<Ly; j++) {
       for(int k=0; k<Lz; k++) {
@@ -93,7 +96,7 @@ int main(int argc, char* argv[]) {
   //Run through equilibration sweeps
   for (int t=1; t <= eqSweeps; t++) {
     //Run one full sweep
-    sweep(*X_ptr, *S_ptr, e, kT);
+    sweep(M, *X_ptr, *S_ptr, e, kT);
 
     //Print out equilibration data
     if (t%100 == 0) {
@@ -114,7 +117,7 @@ int main(int argc, char* argv[]) {
   cout << "*********************\nBeginning data sweeps\n*********************" << endl;
   for (int t = 1; t <= dataSweeps; t++) {
     //Run one full sweep
-    sweep(*X_ptr, *S_ptr, e, kT);
+    sweep(M, *X_ptr, *S_ptr, e, kT);
 
     //Calculate Theta
     SimArray<double> Theta = phase_parameter(*X_ptr);
@@ -151,7 +154,7 @@ int main(int argc, char* argv[]) {
   cout << "\nFinished simulation on " << ctime(&end_time) << endl;
 
   //Memory Management
-  delete X_ptr; delete S_ptr;
+  delete X_ptr; delete S_ptr; delete[] M;
 
   //Exit successfully
   return 0;

@@ -23,13 +23,29 @@
 
 using namespace std;
 
-//Run full sweep (Lx*Ly*Lz MC moves)
-void sweep(SimArray<int>& X, SimArray<int>& S, double& e, const double kT) {
-  for (int t=0; t < Lx*Ly*Lz; t++) {
-    //Pick random lattice point
-    int i = rand()%Lx;
-    int j = rand()%Ly;
-    int k = rand()%Lz;
+// Generate moves into M
+void gen_moves(SimArray<int>& Y, vector<Move>* M, int& moves_left) {
+  /* cout << "gen_moves.." << endl; */
+  // (Re)initilize Y
+  for(int i=0; i<Lx; i++) {
+    for(int j=0; j<Ly; j++) {
+      for(int k=0; k<Lz; k++) {
+        // Initialize to 0
+        Y[i][j][k] = 0;
+      }
+    }
+  }
+
+  // pc is used to fill moves in a round robin manner
+  int pc = 0;
+  while (true) {
+    if (moves_left == 0) break;
+    /* cout << "pc: " << pc << endl; */
+    Move* move = new Move;
+
+    move->cell0[0] = rand()%Lx;
+    move->cell0[1] = rand()%Ly;
+    move->cell0[2] = rand()%Lz;
 
     //Pick random number between 0 and 1 to determine move
     double m = (double)rand()/(double)RAND_MAX;
@@ -37,37 +53,189 @@ void sweep(SimArray<int>& X, SimArray<int>& S, double& e, const double kT) {
     //Choose move depending on m
     if (m < ROTATION) {
       //Rotation move
-      //Pick new orientation
-      int q = rand()%6 + 1;
-
-      //Calculate energy change for chosen rotation
-      double de = rotation_energy_change(S, i, j, k, q)/kT;
-
-      //Check whether to accept or not
-      if ((double)rand()/(double)RAND_MAX < exp(-de)) {
-        //Accept move. Update orientation and energy
-        S[i][j][k] = q;
-        e += de;
-      }
+      move->type = 0;
     } else if (m > ROTATION && m < (ROTATION+PARTSWAP)) {
+      move->type = 1;
       //Pick random particle to swap with
-      int ii = rand()%Lx;
-      int jj = rand()%Ly;
-      int kk = rand()%Lz;
+      move->cell1[0] = rand()%Lx;
+      move->cell1[1] = rand()%Ly;
+      move->cell1[2] = rand()%Lz;
+    }
 
-      //Get change in energy associated with switching particles
-      double de = particle_swap_energy_change(X, S, i, j, k, ii, jj, kk)/kT;
+    int r = check_conflicts(Y, move, pc);
+    /* cout << "check_conflicts returned " << r << endl; */
+    if (r == 0) {
+      // no conflict, assign round robin
+      M[pc].push_back(*move);
+      pc = (pc + 1) % np;
+      moves_left--;
+    } else if (r > 0) {
+      // one conflict, assign to that processor
+      M[r].push_back(*move);
+      moves_left--;
+    } else {
+      // more than one conflict, we need to stop generate
+      break;
+    }
+  }
+}
 
-      //Check whether to accept move or not
-      if ((double)rand()/(double)RAND_MAX < exp(-de)) {
-        //Accept move. Update orientation and energy
-        int x = X[i][j][k]; int s = S[i][j][k];
-        X[i][j][k] = X[ii][jj][kk]; S[i][j][k] = S[ii][jj][kk];
-        X[ii][jj][kk] = x; S[ii][jj][kk] = s;
-        e += de;
+void print_move(Move& move) {
+  if (move.type) { // swap
+    cout << "swap((" << move.cell0[0] << ", " << move.cell0[1] << ", " <<
+      move.cell0[2] << "), (" << move.cell1[0] << ", " << move.cell1[1] << ", "
+      << move.cell1[2] << "))" << endl;
+  } else { // rotation
+    cout << "rotate(" << move.cell0[0] << ", " << move.cell0[1] << ", " <<
+      move.cell0[2] << ")" << endl;
+  }
+}
+
+// Check wheter a move conflicts, return what processor a move should be assigned to
+// return -1 if there are two or more conflicts
+int check_conflicts(SimArray<int>& Y, Move* move, int pc) {
+  /* cout << "check conflicts for move:" << endl; */
+  /* print_move(*move); */
+  int cell = 0;
+  int conflict_processor = 0;
+  if (move->type) { // swap
+    for (int i = 0; i < 3; i++) {
+      for (int j = -1; j <= 1; j += 2) {
+        cell = Y[(move->cell0[0] + (i==2)*j + Lx)%Lx][(move->cell0[1] +
+            (i==1)*j + Ly)%Ly][(move->cell0[2] + (i==0)*j + Lz)%Lz];
+        if (cell) {
+          if (conflict_processor and (conflict_processor != cell)) {
+            return -1; // more than one conflicts!
+          } else {
+            conflict_processor = cell;
+            /* cout << "cell coordinates: " << (move->cell0[0] + (i==2)*j + Lx)%Lx */
+            /*   << ", " << (move->cell0[1] + (i==1)*j + Ly)%Ly << ", " << */
+            /*   (move->cell0[2] + (i==0)*j + Lz)%Lz << endl; */
+            /* cout << "cell content: " << cell << endl; */
+          }
+        }
+      }
+    }
+    for (int i = 0; i < 3; i++) {
+      for (int j = -1; j <= 1; j += 2) {
+        cell = Y[(move->cell1[0] + (i==2)*j + Lx)%Lx][(move->cell1[1] +
+            (i==1)*j + Ly)%Ly][(move->cell1[2] + (i==0)*j + Lz)%Lz];
+        if (cell) {
+          if (conflict_processor and (conflict_processor != cell)) {
+            return -1; // more than one conflicts!
+          } else {
+            conflict_processor = cell;
+            /* cout << "cell coordinates: " << (move->cell1[0] + (i==2)*j + Lx)%Lx */
+            /*   << ", " << (move->cell1[1] + (i==1)*j + Ly)%Ly << ", " << */
+            /*   (move->cell1[2] + (i==0)*j + Lz)%Lz << endl; */
+            /* cout << "cell content: " << cell << endl; */
+          }
+        }
+      }
+    }
+    if (conflict_processor > 0) pc = conflict_processor;
+    for (int i = 0; i < 3; i++) {
+      for (int j = -1; j <= 1; j += 2) {
+        Y[(move->cell0[0] + (i==2)*j)%Lx][(move->cell0[1] +
+            (i==1)*j)%Ly][(move->cell0[2] + (i==0)*j)%Lz] = pc;
+        /* cout << "set cell to " << pc << endl; */
+      }
+    }
+    for (int i = 0; i < 3; i++) {
+      for (int j = -1; j <= 1; j += 2) {
+        Y[(move->cell1[0] + (i==2)*j)%Lx][(move->cell1[1] +
+            (i==1)*j)%Ly][(move->cell1[2] + (i==0)*j)%Lz] = pc;
+        /* cout << "set cell to " << pc << endl; */
+      }
+    }
+  } else { // rotation
+    for (int i = 0; i < 3; i++) {
+      for (int j = -1; j <= 1; j += 2) {
+        cell = Y[(move->cell0[0] + (i==2)*j + Lx)%Lx][(move->cell0[1] +
+            (i==1)*j + Ly)%Ly][(move->cell0[2] + (i==0)*j + Lz)%Lz];
+        if (cell) {
+          if (conflict_processor and (conflict_processor != cell)) {
+            return -1; // more than one conflicts!
+          } else {
+            conflict_processor = cell;
+            /* cout << "cell coordinates: " << (move->cell0[0] + (i==2)*j + Lx)%Lx */
+            /*   << ", " << (move->cell0[1] + (i==1)*j + Ly)%Ly << ", " << */
+            /*   (move->cell0[2] + (i==0)*j + Lz)%Lz << endl; */
+            /* cout << "cell content: " << cell << endl; */
+          }
+        }
+      }
+    }
+    if (conflict_processor > 0) pc = conflict_processor;
+    for (int i = 0; i < 3; i++) {
+      for (int j = -1; j <= 1; j += 2) {
+        Y[(move->cell0[0] + (i==2)*j)%Lx][(move->cell0[1] +
+            (i==1)*j)%Ly][(move->cell0[2] + (i==0)*j)%Lz] = pc;
+        /* cout << "set cell to " << pc << endl; */
       }
     }
   }
+  return conflict_processor;
+}
+
+//Run full sweep (Lx*Ly*Lz MC moves)
+void sweep(vector<Move>* M, SimArray<int>& X, SimArray<int>& S, double& e, const double kT) {
+  /* cout << "sweep" << endl; */
+  int m = Lx*Ly*Lz;
+
+  // Y is used to keep track of move assignment
+  SimArray<int>* Y_ptr = new SimArray<int>;
+
+  while (m > 0) { // until we do enough moves
+
+    gen_moves(*Y_ptr, M, m);
+
+    /* cout << "moves left for this sweep: " << m << endl; */
+
+    for (int i = 0; i < np; i++) {
+      while (M[i].size() > 0) {
+        Move move = M[i].back();
+        M[i].pop_back();
+        /* print_move(move); */
+        if (move.type) { // swap
+          //Get change in energy associated with switching particles
+          int i = move.cell0[0];
+          int j = move.cell0[1];
+          int k = move.cell0[2];
+          int ii = move.cell1[0];
+          int jj = move.cell1[1];
+          int kk = move.cell1[2];
+          double de = particle_swap_energy_change(X, S, i, j, k, ii, jj, kk)/kT;
+
+          //Check whether to accept move or not
+          if ((double)rand()/(double)RAND_MAX < exp(-de)) {
+            //Accept move. Update orientation and energy
+            int x = X[i][j][k]; int s = S[i][j][k];
+            X[i][j][k] = X[ii][jj][kk]; S[i][j][k] = S[ii][jj][kk];
+            X[ii][jj][kk] = x; S[ii][jj][kk] = s;
+            e += de;
+          }
+        } else { // rotation
+          int i = move.cell0[0];
+          int j = move.cell0[1];
+          int k = move.cell0[2];
+          //Pick new orientation
+          int q = rand()%6 + 1;
+
+          //Calculate energy change for chosen rotation
+          double de = rotation_energy_change(S, i, j, k, q)/kT;
+
+          //Check whether to accept or not
+          if ((double)rand()/(double)RAND_MAX < exp(-de)) {
+            //Accept move. Update orientation and energy
+            S[i][j][k] = q;
+            e += de;
+          }
+        }
+      }
+    }
+  }
+  delete Y_ptr;
 }
 
 //Calculate energy of full box

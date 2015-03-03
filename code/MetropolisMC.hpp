@@ -13,6 +13,8 @@
 
 //Array include
 #include <array>
+//Vector include
+#include <vector>
 
 /* SIMULATION PARAMETERS */
 
@@ -32,7 +34,16 @@
 #define ROTATION 0.5
 #define PARTSWAP 0.5
 
+#define np 4
+
 /* TEMPLATED DATA STRUCTURES */
+
+// datatype representing a move
+struct Move {
+  char type; // 0 for rotation, 1 for swap
+  int cell0[3];
+  int cell1[3];
+};
 
 //Template class to make a 3d array
 template <typename T, size_t x, size_t y, size_t z>
@@ -46,8 +57,13 @@ using SimArray = Dim3Array<T, Lx, Ly, Lz>;
 using Dim2Array = std::array<std::array<double, 100>, 100>;
 
 /* FUNCTION PROTOTYPES */
+
+void gen_moves(SimArray<int>& Y, std::vector<Move>* M, int& moves_left);
+int check_conflicts(SimArray<int>& Y, Move* move, int pc);
+void print_move(Move& Move);
+
 //Main simulation functions
-void sweep(SimArray<int>& X, SimArray<int>& S, double& e, const double kT);
+void sweep(std::vector<Move>* M, SimArray<int>& X, SimArray<int>& S, double& e, const double kT);
 int mod(int k, int n);
 
 //Energy related functions
