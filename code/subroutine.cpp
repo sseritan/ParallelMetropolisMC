@@ -17,7 +17,8 @@
 #include <vector>
 //Random include
 #include <cstdlib>
-#include <cilk/cilk.h>
+//TBB
+#include <tbb/parallel_for.h>
 
 //Header include
 #include "MetropolisMC.hpp"
@@ -195,9 +196,9 @@ void sweep(vector<Move>* M, SimArray<int>& X, SimArray<int>& S, double& e, const
 
     /* cout << "moves left for this sweep: " << m << endl; */
 
-    cilk_for (int i = 0; i < np; i++) {
+    tbb::parallel_for (0, np, [&] (int i) {
       do_moves(M[i], X, S, e, kT);
-    }
+    });
   }
   /* cout << "average batch size: " << Lx*Ly*Lz / count << endl; */
   delete Y_ptr;
