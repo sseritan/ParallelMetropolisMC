@@ -61,6 +61,7 @@ using Dim2Array = std::array<std::array<double, 100>, 100>;
 void gen_moves(SimArray<int>& Y, std::vector<Move>* M, int& moves_left);
 int check_conflicts(SimArray<int>& Y, Move* move, int pc);
 void print_move(Move& Move);
+void do_moves(std::vector<Move>& M, SimArray<int>& X, SimArray<int>& S, double& e, const double kT);
 
 //Main simulation functions
 void sweep(std::vector<Move>* M, SimArray<int>& X, SimArray<int>& S, double& e, const double kT);

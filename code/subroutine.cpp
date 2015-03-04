@@ -196,51 +196,55 @@ void sweep(vector<Move>* M, SimArray<int>& X, SimArray<int>& S, double& e, const
     /* cout << "moves left for this sweep: " << m << endl; */
 
     cilk_for (int i = 0; i < np; i++) {
-      /* cout << "making moves for i = " << i << endl; */
-      while (M[i].size() > 0) {
-        Move move = M[i].back();
-        M[i].pop_back();
-        /* print_move(move); */
-        if (move.type) { // swap
-          //Get change in energy associated with switching particles
-          int i = move.cell0[0];
-          int j = move.cell0[1];
-          int k = move.cell0[2];
-          int ii = move.cell1[0];
-          int jj = move.cell1[1];
-          int kk = move.cell1[2];
-          double de = particle_swap_energy_change(X, S, i, j, k, ii, jj, kk)/kT;
-
-          //Check whether to accept move or not
-          if ((double)rand()/(double)RAND_MAX < exp(-de)) {
-            //Accept move. Update orientation and energy
-            int x = X[i][j][k]; int s = S[i][j][k];
-            X[i][j][k] = X[ii][jj][kk]; S[i][j][k] = S[ii][jj][kk];
-            X[ii][jj][kk] = x; S[ii][jj][kk] = s;
-            e += de;
-          }
-        } else { // rotation
-          int i = move.cell0[0];
-          int j = move.cell0[1];
-          int k = move.cell0[2];
-          //Pick new orientation
-          int q = rand()%6 + 1;
-
-          //Calculate energy change for chosen rotation
-          double de = rotation_energy_change(S, i, j, k, q)/kT;
-
-          //Check whether to accept or not
-          if ((double)rand()/(double)RAND_MAX < exp(-de)) {
-            //Accept move. Update orientation and energy
-            S[i][j][k] = q;
-            e += de;
-          }
-        }
-      }
+      do_moves(M[i], X, S, e, kT);
     }
   }
   /* cout << "average batch size: " << Lx*Ly*Lz / count << endl; */
   delete Y_ptr;
+}
+
+void do_moves(vector<Move>& Mi, SimArray<int>& X, SimArray<int>& S, double& e, const double kT) {
+  /* cout << "making moves for i = " << i << endl; */
+  while (Mi.size() > 0) {
+    Move move = Mi.back();
+    Mi.pop_back();
+    /* print_move(move); */
+    if (move.type) { // swap
+      //Get change in energy associated with switching particles
+      int i = move.cell0[0];
+      int j = move.cell0[1];
+      int k = move.cell0[2];
+      int ii = move.cell1[0];
+      int jj = move.cell1[1];
+      int kk = move.cell1[2];
+      double de = particle_swap_energy_change(X, S, i, j, k, ii, jj, kk)/kT;
+
+      //Check whether to accept move or not
+      if ((double)rand()/(double)RAND_MAX < exp(-de)) {
+        //Accept move. Update orientation and energy
+        int x = X[i][j][k]; int s = S[i][j][k];
+        X[i][j][k] = X[ii][jj][kk]; S[i][j][k] = S[ii][jj][kk];
+        X[ii][jj][kk] = x; S[ii][jj][kk] = s;
+        e += de;
+      }
+    } else { // rotation
+      int i = move.cell0[0];
+      int j = move.cell0[1];
+      int k = move.cell0[2];
+      //Pick new orientation
+      int q = rand()%6 + 1;
+
+      //Calculate energy change for chosen rotation
+      double de = rotation_energy_change(S, i, j, k, q)/kT;
+
+      //Check whether to accept or not
+      if ((double)rand()/(double)RAND_MAX < exp(-de)) {
+        //Accept move. Update orientation and energy
+        S[i][j][k] = q;
+        e += de;
+      }
+    }
+  }
 }
 
 //Calculate energy of full box
