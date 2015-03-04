@@ -34,7 +34,7 @@
 #define ROTATION 0.5
 #define PARTSWAP 0.5
 
-#define np 8
+#define np 64
 
 /* TEMPLATED DATA STRUCTURES */
 
