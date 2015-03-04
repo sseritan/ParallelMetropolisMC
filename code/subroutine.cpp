@@ -18,6 +18,7 @@
 //Random include
 #include <cstdlib>
 //TBB
+#include <tbb/task_group.h>
 #include <tbb/parallel_for.h>
 
 //Header include
@@ -185,23 +186,44 @@ void sweep(vector<Move>* M, SimArray<int>& X, SimArray<int>& S, double& e, const
   /* cout << "sweep" << endl; */
   int m = Lx*Ly*Lz;
   int count = 0;
+  tbb::task_group g;
+  vector<Move>* M_orig = M;
 
   // Y is used to keep track of move assignment
   SimArray<int>* Y_ptr = new SimArray<int>;
 
+  // Next batch
+  vector<Move>* N = new vector<Move>[np];
+
+  gen_moves(*Y_ptr, N, m);
+
   while (m > 0) { // until we do enough moves
     count++;
 
-    gen_moves(*Y_ptr, M, m);
+    // swap N and M
+    vector<Move>* tmp = N;
+    N = M;
+    M = tmp;
+
+    g.run([&]{gen_moves(*Y_ptr, N, m);});
+
+    g.run([&]{
+      tbb::parallel_for (0, np, [&] (int i) {
+        do_moves(M[i], X, S, e, kT);
+      });
+    });
+
+    g.wait();
 
     /* cout << "moves left for this sweep: " << m << endl; */
-
-    tbb::parallel_for (0, np, [&] (int i) {
-      do_moves(M[i], X, S, e, kT);
-    });
   }
   /* cout << "average batch size: " << Lx*Ly*Lz / count << endl; */
   delete Y_ptr;
+  if (N == M_orig) {
+    delete[] M;
+  } else {
+    delete[] N;
+  }
 }
 
 void do_moves(vector<Move>& Mi, SimArray<int>& X, SimArray<int>& S, double& e, const double kT) {
