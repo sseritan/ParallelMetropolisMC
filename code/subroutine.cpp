@@ -17,9 +17,6 @@
 #include <vector>
 //Random include
 #include <cstdlib>
-//TBB
-#include <tbb/task_group.h>
-#include <tbb/parallel_for.h>
 
 //Header include
 #include "MetropolisMC.hpp"
@@ -186,7 +183,6 @@ void sweep(vector<Move>* M, SimArray<int>& X, SimArray<int>& S, double& e, const
   /* cout << "sweep" << endl; */
   int m = Lx*Ly*Lz;
   int count = 0;
-  tbb::task_group g;
   vector<Move>* M_orig = M;
 
   // Y is used to keep track of move assignment
@@ -205,15 +201,19 @@ void sweep(vector<Move>* M, SimArray<int>& X, SimArray<int>& S, double& e, const
     N = M;
     M = tmp;
 
-    g.run([&]{gen_moves(*Y_ptr, N, m);});
+    #pragma omp parallel sections
+    {
+      #pragma omp section
+      gen_moves(*Y_ptr, N, m);
 
-    g.run([&]{
-      tbb::parallel_for (0, np, [&] (int i) {
-        do_moves(M[i], X, S, e, kT);
-      });
-    });
-
-    g.wait();
+      #pragma omp section
+      {
+        #pragma omp parallel for
+        for (int i = 0; i < np; i++) {
+          do_moves(M[i], X, S, e, kT);
+        }
+      }
+    }
 
     /* cout << "moves left for this sweep: " << m << endl; */
   }
