@@ -34,7 +34,7 @@
 #define ROTATION 0.5
 #define PARTSWAP 0.5
 
-#define np 100
+#define np 8
 
 /* TEMPLATED DATA STRUCTURES */
 
@@ -58,8 +58,8 @@ using Dim2Array = std::array<std::array<double, 100>, 100>;
 
 /* FUNCTION PROTOTYPES */
 
-void gen_moves(SimArray<int>& Y, std::vector<Move>* M, int& moves_left);
-int check_conflicts(SimArray<int>& Y, Move* move, int pc);
+void gen_moves(SimArray<int>& Y, std::vector<Move>& moves, std::vector<Move>* M);
+int check_conflicts(SimArray<int>& Y, Move& move, int pc);
 void print_move(Move& Move);
 double do_moves(std::vector<Move>& M, SimArray<int>& X, SimArray<int>& S, const double kT);
 

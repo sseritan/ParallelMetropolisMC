@@ -28,7 +28,7 @@
 using namespace std;
 
 // Generate moves into M
-void gen_moves(SimArray<int>& Y, vector<Move>* M, int& moves_left) {
+void gen_moves(SimArray<int>& Y, vector<Move>& moves, vector<Move>* M) {
   /* cout << "gen_moves.." << endl; */
   // (Re)initilize Y
   for(int i=0; i<Lx; i++) {
@@ -42,45 +42,24 @@ void gen_moves(SimArray<int>& Y, vector<Move>* M, int& moves_left) {
 
   // pc is used to fill moves in a round robin manner
   int pc = 0;
-  while (true) {
-    if (moves_left == 0) break;
+  while (moves.size() > 0) {
     /* cout << "pc: " << pc << endl; */
-    Move* move = new Move;
 
-    move->cell0[0] = rand()%Lx;
-    move->cell0[1] = rand()%Ly;
-    move->cell0[2] = rand()%Lz;
-
-    //Pick random number between 0 and 1 to determine move
-    double m = (double)rand()/(double)RAND_MAX;
-
-    //Choose move depending on m
-    if (m < ROTATION) {
-      //Rotation move
-      move->type = 0;
-    } else if (m > ROTATION && m < (ROTATION+PARTSWAP)) {
-      move->type = 1;
-      //Pick random particle to swap with
-      move->cell1[0] = rand()%Lx;
-      move->cell1[1] = rand()%Ly;
-      move->cell1[2] = rand()%Lz;
-    }
-
+    Move move = moves.back();
     int r = check_conflicts(Y, move, pc);
     /* cout << "check_conflicts returned " << r << endl; */
     if (r == 0) {
       // no conflict, assign round robin
-      M[pc].push_back(*move);
+      M[pc].push_back(move);
       pc = (pc + 1) % np;
-      moves_left--;
     } else if (r > 0) {
       // one conflict, assign to that processor
-      M[r].push_back(*move);
-      moves_left--;
+      M[r].push_back(move);
     } else {
       // more than one conflict, we need to stop generate
       break;
     }
+    moves.pop_back();
   }
 }
 
@@ -97,16 +76,16 @@ void print_move(Move& move) {
 
 // Check wheter a move conflicts, return what processor a move should be assigned to
 // return -1 if there are two or more conflicts
-int check_conflicts(SimArray<int>& Y, Move* move, int pc) {
+int check_conflicts(SimArray<int>& Y, Move& move, int pc) {
   /* cout << "check conflicts for move:" << endl; */
   /* print_move(*move); */
   int cell = 0;
   int conflict_processor = 0;
-  if (move->type) { // swap
+  if (move.type) { // swap
     for (int i = 0; i < 3; i++) {
       for (int j = -1; j <= 1; j += 2) {
-        cell = Y[mod(move->cell0[0] + (i==2)*j, Lx)][mod(move->cell0[1] +
-            (i==1)*j, Ly)][mod(move->cell0[2] + (i==0)*j, Lz)];
+        cell = Y[mod(move.cell0[0] + (i==2)*j, Lx)][mod(move.cell0[1] +
+            (i==1)*j, Ly)][mod(move.cell0[2] + (i==0)*j, Lz)];
         /* cout << "cell coordinates: " << mod(move->cell0[0] + (i==2)*j, Lx) << */
         /*   ", " << mod(move->cell0[1] + (i==1)*j, Ly) << ", " << */
         /*   mod(move->cell0[2] + (i==0)*j, Lz) << endl; */
@@ -122,8 +101,8 @@ int check_conflicts(SimArray<int>& Y, Move* move, int pc) {
     }
     for (int i = 0; i < 3; i++) {
       for (int j = -1; j <= 1; j += 2) {
-        cell = Y[mod(move->cell1[0] + (i==2)*j, Lx)][mod(move->cell1[1] +
-            (i==1)*j, Ly)][mod(move->cell1[2] + (i==0)*j, Lz)];
+        cell = Y[mod(move.cell1[0] + (i==2)*j, Lx)][mod(move.cell1[1] +
+            (i==1)*j, Ly)][mod(move.cell1[2] + (i==0)*j, Lz)];
         /* cout << "cell coordinates: " << mod(move->cell1[0] + (i==2)*j, Lx) << */
         /*   ", " << mod(move->cell1[1] + (i==1)*j, Ly) << ", " << */
         /*   mod(move->cell1[2] + (i==0)*j, Lz) << endl; */
@@ -140,23 +119,23 @@ int check_conflicts(SimArray<int>& Y, Move* move, int pc) {
     if (conflict_processor > 0) pc = conflict_processor;
     for (int i = 0; i < 3; i++) {
       for (int j = -1; j <= 1; j += 2) {
-        Y[mod(move->cell0[0] + (i==2)*j, Lx)][mod(move->cell0[1] +
-            (i==1)*j, Ly)][mod(move->cell0[2] + (i==0)*j, Lz)] = pc;
+        Y[mod(move.cell0[0] + (i==2)*j, Lx)][mod(move.cell0[1] +
+            (i==1)*j, Ly)][mod(move.cell0[2] + (i==0)*j, Lz)] = pc;
         /* cout << "set cell to " << pc << endl; */
       }
     }
     for (int i = 0; i < 3; i++) {
       for (int j = -1; j <= 1; j += 2) {
-        Y[mod(move->cell1[0] + (i==2)*j, Lx)][mod(move->cell1[1] +
-            (i==1)*j, Ly)][mod(move->cell1[2] + (i==0)*j, Lz)] = pc;
+        Y[mod(move.cell1[0] + (i==2)*j, Lx)][mod(move.cell1[1] +
+            (i==1)*j, Ly)][mod(move.cell1[2] + (i==0)*j, Lz)] = pc;
         /* cout << "set cell to " << pc << endl; */
       }
     }
   } else { // rotation
     for (int i = 0; i < 3; i++) {
       for (int j = -1; j <= 1; j += 2) {
-        cell = Y[mod(move->cell0[0] + (i==2)*j, Lx)][mod(move->cell0[1] +
-            (i==1)*j, Ly)][mod(move->cell0[2] + (i==0)*j, Lz)];
+        cell = Y[mod(move.cell0[0] + (i==2)*j, Lx)][mod(move.cell0[1] +
+            (i==1)*j, Ly)][mod(move.cell0[2] + (i==0)*j, Lz)];
         /* cout << "cell coordinates: " << mod(move->cell0[0] + (i==2)*j, Lx) << */
         /*   ", " << mod(move->cell0[1] + (i==1)*j, Ly) << ", " << */
         /*   mod(move->cell0[2] + (i==0)*j, Lz) << endl; */
@@ -173,8 +152,8 @@ int check_conflicts(SimArray<int>& Y, Move* move, int pc) {
     if (conflict_processor > 0) pc = conflict_processor;
     for (int i = 0; i < 3; i++) {
       for (int j = -1; j <= 1; j += 2) {
-        Y[mod(move->cell0[0] + (i==2)*j, Lx)][mod(move->cell0[1] +
-            (i==1)*j, Ly)][mod(move->cell0[2] + (i==0)*j, Lz)] = pc;
+        Y[mod(move.cell0[0] + (i==2)*j, Lx)][mod(move.cell0[1] +
+            (i==1)*j, Ly)][mod(move.cell0[2] + (i==0)*j, Lz)] = pc;
         /* cout << "set cell to " << pc << endl; */
       }
     }
@@ -185,10 +164,11 @@ int check_conflicts(SimArray<int>& Y, Move* move, int pc) {
 //Run full sweep (Lx*Ly*Lz MC moves)
 void sweep(vector<Move>* M, SimArray<int>& X, SimArray<int>& S, double& e, const double kT) {
   /* cout << "sweep" << endl; */
-  int m = Lx*Ly*Lz;
   int count = 0;
   tbb::task_group g;
   vector<Move>* M_orig = M;
+  vector<Move> moves;
+  Move move;
 
   // Y is used to keep track of move assignment
   SimArray<int>* Y_ptr = new SimArray<int>;
@@ -196,9 +176,32 @@ void sweep(vector<Move>* M, SimArray<int>& X, SimArray<int>& S, double& e, const
   // Next batch
   vector<Move>* N = new vector<Move>[np];
 
-  gen_moves(*Y_ptr, N, m);
+  for (int i = 0; i < Lx*Ly*Lz; i++) {
+    move.cell0[0] = rand()%Lx;
+    move.cell0[1] = rand()%Ly;
+    move.cell0[2] = rand()%Lz;
 
-  while (m > 0) { // until we do enough moves
+    //Pick random number between 0 and 1 to determine move
+    double m = (double)rand()/(double)RAND_MAX;
+
+    //Choose move depending on m
+    if (m < ROTATION) {
+      //Rotation move
+      move.type = 0;
+    } else if (m > ROTATION && m < (ROTATION+PARTSWAP)) {
+      move.type = 1;
+      //Pick random particle to swap with
+      move.cell1[0] = rand()%Lx;
+      move.cell1[1] = rand()%Ly;
+      move.cell1[2] = rand()%Lz;
+    }
+
+    moves.push_back(move);
+  }
+
+  gen_moves(*Y_ptr, moves, N);
+
+  while (moves.size() > 0) { // until we do enough moves
     count++;
 
     // swap N and M
@@ -206,7 +209,7 @@ void sweep(vector<Move>* M, SimArray<int>& X, SimArray<int>& S, double& e, const
     N = M;
     M = tmp;
 
-    g.run([&]{gen_moves(*Y_ptr, N, m);});
+    g.run([&]{gen_moves(*Y_ptr, moves, N);});
 
     g.run([&]{
       e += tbb::parallel_reduce(
