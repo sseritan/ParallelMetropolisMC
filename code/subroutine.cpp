@@ -117,20 +117,8 @@ int check_conflicts(SimArray<int>& Y, Move& move, int pc) {
       }
     }
     if (conflict_processor > 0) pc = conflict_processor;
-    for (int i = 0; i < 3; i++) {
-      for (int j = -1; j <= 1; j += 2) {
-        Y[mod(move.cell0[0] + (i==2)*j, Lx)][mod(move.cell0[1] +
-            (i==1)*j, Ly)][mod(move.cell0[2] + (i==0)*j, Lz)] = pc;
-        /* cout << "set cell to " << pc << endl; */
-      }
-    }
-    for (int i = 0; i < 3; i++) {
-      for (int j = -1; j <= 1; j += 2) {
-        Y[mod(move.cell1[0] + (i==2)*j, Lx)][mod(move.cell1[1] +
-            (i==1)*j, Ly)][mod(move.cell1[2] + (i==0)*j, Lz)] = pc;
-        /* cout << "set cell to " << pc << endl; */
-      }
-    }
+    Y[move.cell0[0]][move.cell0[1]][move.cell0[2]] = pc;
+    Y[move.cell1[0]][move.cell1[1]][move.cell1[2]] = pc;
   } else { // rotation
     for (int i = 0; i < 3; i++) {
       for (int j = -1; j <= 1; j += 2) {
@@ -150,13 +138,7 @@ int check_conflicts(SimArray<int>& Y, Move& move, int pc) {
       }
     }
     if (conflict_processor > 0) pc = conflict_processor;
-    for (int i = 0; i < 3; i++) {
-      for (int j = -1; j <= 1; j += 2) {
-        Y[mod(move.cell0[0] + (i==2)*j, Lx)][mod(move.cell0[1] +
-            (i==1)*j, Ly)][mod(move.cell0[2] + (i==0)*j, Lz)] = pc;
-        /* cout << "set cell to " << pc << endl; */
-      }
-    }
+    Y[move.cell0[0]][move.cell0[1]][move.cell0[2]] = pc;
   }
   return conflict_processor;
 }
@@ -202,7 +184,7 @@ void sweep(vector<Move>* M, SimArray<int>& X, SimArray<int>& S, double& e, const
   gen_moves(*Y_ptr, moves, N);
 
   while (moves.size() > 0) { // until we do enough moves
-    count++;
+    /* count++; */
 
     // swap N and M
     vector<Move>* tmp = N;
