@@ -104,6 +104,15 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  //Check the histogram just to see if we have one or two phases
+  SimArray<double> Theta = phase_parameter(*X_ptr);
+  array<double, 100> h = histogram(Theta);
+  cout << "Histogram of Theta: " << endl;
+  for (int i = 0; i < 100; i++) {
+    cout << i << ": " << h[i] << ", ";
+  }
+  cout << endl;
+
   //Initialize data collection variables
   //MeltingTemp variable
   double eAvg;

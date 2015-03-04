@@ -258,6 +258,37 @@ double medium_phase_parameter(const SimArray<double>& theta, int i, int j, int k
   return Theta/27.0;
 }
 
+//Make a histogram of an order parameter
+array<double, 100> histogram(const SimArray<double>& param) {
+  //Initialize array to all zeroes
+  array<double, 100> h = {0.0};
+
+  //Run through parameter array
+  for (int i = 0; i < Lx; i++) {
+    for (int j = 0; j < Ly; j++) {
+      for (int k = 0; k < Lz; k++) {
+        //Truncate parameter at 2nd decimal place to get bin
+        int index = floorf(param[i][j][k]*100);
+
+        //1.00 will return 100, but 99 is max bin
+        if (index > 99) {
+          index = 99;
+        }
+
+        //Add 1 to corresponding bin
+        h[index] += 1;
+      }
+    }
+  }
+
+  //Normalize histogram
+  for (int i = 0; i < 100; i++) {
+    h[i] = h[i]/(double)(Lx*Ly*Lz);
+  }
+
+  return h;
+}
+
 //From the given respective CUTOFF value, calculate XA in the two phases (0 = A-rich, 1 = B-rich)
 array<double, 2> phase_data(const SimArray<int>& X, const SimArray<double>& param, const double cutoff) {
   //Temporary number arrays (total and A in both phases

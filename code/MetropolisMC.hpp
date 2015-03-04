@@ -22,7 +22,7 @@
 //Lattice Size
 #define Lx 10
 #define Ly 10
-#define Lz 10
+#define Lz 100
 
 //Hamiltonian definition
 #define K 0.5
@@ -61,6 +61,7 @@ double particle_swap_energy_change(SimArray<int>& X, SimArray<int>& S, int i, in
 SimArray<double> phase_parameter(const SimArray<int>& X);
 double local_phase_parameter(const SimArray<int>& X, int i, int j, int k);
 double medium_phase_parameter(const SimArray<double>& theta, int i, int j, int k);
+std::array<double, 100> histogram(const SimArray<double>& param);
 
 //Data collection related functions
 std::array<double, 2> phase_data(const SimArray<int>& X, const SimArray<double>& Theta, const double cutoff);
