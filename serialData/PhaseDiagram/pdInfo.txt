@@ -1,0 +1,12 @@
+0.5 XA (A-rich): 1.00 XA (B-rich):0.00
+0.55 XA (A-rich): 0.99 XA (B-rich):0.01
+0.60 XA (A-rich): 0.99 XA (B-rich):0.01
+0.65 XA (A-rich): 0.98 XA (B-rich):0.02
+0.70 XA (A-rich): 0.98 XA (B-rich):0.02
+0.75 XA (A-rich): 0.97 XA (B-rich):0.03
+0.80 XA (A-rich): 0.95 XA (B-rich):0.04
+0.85 XA (A-rich): 0.94 XA (B-rich):0.06
+0.90 XA (A-rich): 0.92 XA (B-rich):0.08
+0.95 XA (A-rich): 0.90 XA (B-rich):0.10
+1.00 XA (A-rich): 0.87 XA (B-rich):0.13
+1.05 XA (A-rich): 0.83 XA (B-rich):0.18

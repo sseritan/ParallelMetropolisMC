@@ -1,0 +1,53 @@
+SIMULATION DETAILS
+Started simulation on Tue Mar  3 20:51:37 2015
+
+Box Dimensions: 10x10x100
+Temperature: 1.05
+Hamiltonian: K=0.50 A=1.00
+Move probabilities: Rotation=0.50 Particle Swap=0.50
+Sweep information: Equilibration=3000 Data Gathering=5000
+Seeding box with 5000 particles of species A
+Using Theta cutoff value of 0.50
+Using seed 1425444697317843 for srand().
+
+Initial energy (E/kT): -42761.90
+Equilibration sweep 100/3000 E/kT(updated)=-38590.48
+Equilibration sweep 200/3000 E/kT(updated)=-38356.19
+Equilibration sweep 300/3000 E/kT(updated)=-38254.29
+Equilibration sweep 400/3000 E/kT(updated)=-38442.86
+Equilibration sweep 500/3000 E/kT(updated)=-38275.24
+Equilibration sweep 600/3000 E/kT(updated)=-38117.14
+Equilibration sweep 700/3000 E/kT(updated)=-38412.38
+Equilibration sweep 800/3000 E/kT(updated)=-38227.62
+Equilibration sweep 900/3000 E/kT(updated)=-38315.24
+Equilibration sweep 1000/3000 E/kT(updated)=-38350.48
+Equilibration sweep 1100/3000 E/kT(updated)=-38605.71
+Equilibration sweep 1200/3000 E/kT(updated)=-38370.48
+Equilibration sweep 1300/3000 E/kT(updated)=-38356.19
+Equilibration sweep 1400/3000 E/kT(updated)=-38096.19
+Equilibration sweep 1500/3000 E/kT(updated)=-38300.00
+Equilibration sweep 1600/3000 E/kT(updated)=-38241.90
+Equilibration sweep 1700/3000 E/kT(updated)=-38379.05
+Equilibration sweep 1800/3000 E/kT(updated)=-38476.19
+Equilibration sweep 1900/3000 E/kT(updated)=-38459.05
+Equilibration sweep 2000/3000 E/kT(updated)=-38072.38
+Equilibration sweep 2100/3000 E/kT(updated)=-38633.33
+Equilibration sweep 2200/3000 E/kT(updated)=-38123.81
+Equilibration sweep 2300/3000 E/kT(updated)=-38078.10
+Equilibration sweep 2400/3000 E/kT(updated)=-38441.90
+Equilibration sweep 2500/3000 E/kT(updated)=-38147.62
+Equilibration sweep 2600/3000 E/kT(updated)=-38402.86
+Equilibration sweep 2700/3000 E/kT(updated)=-38090.48
+Equilibration sweep 2800/3000 E/kT(updated)=-38054.29
+Equilibration sweep 2900/3000 E/kT(updated)=-38119.05
+Equilibration sweep 3000/3000 E/kT(updated)=-38322.86
+Histogram of Theta: 
+0: 0.00, 1: 0.01, 2: 0.01, 3: 0.01, 4: 0.02, 5: 0.02, 6: 0.02, 7: 0.02, 8: 0.03, 9: 0.02, 10: 0.02, 11: 0.02, 12: 0.02, 13: 0.02, 14: 0.02, 15: 0.02, 16: 0.02, 17: 0.01, 18: 0.01, 19: 0.01, 20: 0.01, 21: 0.01, 22: 0.01, 23: 0.01, 24: 0.01, 25: 0.01, 26: 0.01, 27: 0.01, 28: 0.01, 29: 0.01, 30: 0.01, 31: 0.01, 32: 0.00, 33: 0.00, 34: 0.00, 35: 0.00, 36: 0.00, 37: 0.01, 38: 0.00, 39: 0.00, 40: 0.00, 41: 0.00, 42: 0.00, 43: 0.00, 44: 0.00, 45: 0.00, 46: 0.00, 47: 0.00, 48: 0.00, 49: 0.00, 50: 0.00, 51: 0.00, 52: 0.00, 53: 0.00, 54: 0.00, 55: 0.00, 56: 0.00, 57: 0.00, 58: 0.00, 59: 0.00, 60: 0.00, 61: 0.00, 62: 0.01, 63: 0.00, 64: 0.01, 65: 0.01, 66: 0.00, 67: 0.01, 68: 0.01, 69: 0.01, 70: 0.01, 71: 0.01, 72: 0.01, 73: 0.01, 74: 0.01, 75: 0.01, 76: 0.01, 77: 0.01, 78: 0.02, 79: 0.02, 80: 0.02, 81: 0.02, 82: 0.02, 83: 0.02, 84: 0.02, 85: 0.02, 86: 0.02, 87: 0.02, 88: 0.02, 89: 0.02, 90: 0.02, 91: 0.02, 92: 0.01, 93: 0.01, 94: 0.01, 95: 0.01, 96: 0.01, 97: 0.00, 98: 0.00, 99: 0.00, 
+*********************
+Beginning data sweeps
+*********************
+Average energy (E/kT): -38240.13
+XA (A-rich): 0.83 XA (B-rich):0.18
+
+Finished simulation on Tue Mar  3 20:52:24 2015
+
