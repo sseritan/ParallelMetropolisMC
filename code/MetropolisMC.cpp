@@ -71,6 +71,8 @@ int main(int argc, char* argv[]) {
   cout << "Using seed " << seed << " for srand()." << endl;
   srand(seed);
 
+  cout << "\nUsing cilk_for in data collection." << endl;
+
   //Initialize identity and orientation arrays
   SimArray<int>* X_ptr = new SimArray<int>;
   SimArray<int>* S_ptr = new SimArray<int>;

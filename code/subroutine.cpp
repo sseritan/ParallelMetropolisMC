@@ -17,6 +17,8 @@
 #include <vector>
 //Random include
 #include <cstdlib>
+//Cilk include
+#include <cilk/cilk.h>
 
 //Header include
 #include "MetropolisMC.hpp"
@@ -44,7 +46,7 @@ void sweep(SimArray<int>& X, SimArray<int>& S, double& e, const double kT) {
       double de = rotation_energy_change(S, i, j, k, q)/kT;
 
       //Check whether to accept or not
-      if ((double)rand()/(double)RAND_MAX < exp(-de)) {
+if ((double)rand()/(double)RAND_MAX < exp(-de)) {
         //Accept move. Update orientation and energy
         S[i][j][k] = q;
         e += de;
@@ -181,8 +183,8 @@ SimArray<double> phase_parameter(const SimArray<int>& X) {
   SimArray<double> theta, Theta;
 
   //Calculate theta from x
-  for (int i = 0; i < Lx; i++) {
-    for (int j = 0; j < Ly; j++) {
+  cilk_for (int i = 0; i < Lx; i++) {
+    cilk_for (int j = 0; j < Ly; j++) {
       for (int k = 0; k < Lz; k++) {
         theta[i][j][k] = local_phase_parameter(X, i, j, k);
       }
@@ -190,8 +192,8 @@ SimArray<double> phase_parameter(const SimArray<int>& X) {
   }
 
   //Calculate Theta from theta
-  for (int i = 0; i < Lx; i++) {
-    for (int j = 0; j < Ly; j++) {
+  cilk_for (int i = 0; i < Lx; i++) {
+    cilk_for (int j = 0; j < Ly; j++) {
       for (int k = 0; k < Lz; k++) {
         Theta[i][j][k] = medium_phase_parameter(theta, i, j, k);
       }
