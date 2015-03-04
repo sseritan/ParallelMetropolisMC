@@ -19,6 +19,7 @@
 #include <cstdlib>
 //TBB
 #include <tbb/task_group.h>
+#include <tbb/parallel_reduce.h>
 #include <tbb/parallel_for.h>
 
 //Header include
@@ -208,9 +209,16 @@ void sweep(vector<Move>* M, SimArray<int>& X, SimArray<int>& S, double& e, const
     g.run([&]{gen_moves(*Y_ptr, N, m);});
 
     g.run([&]{
-      tbb::parallel_for (0, np, [&] (int i) {
-        do_moves(M[i], X, S, e, kT);
-      });
+      e += tbb::parallel_reduce(
+        tbb::blocked_range<int>(0, np),
+        0.d,
+        [&] (const tbb::blocked_range<int>& r, double init)->double {
+          for (int i=r.begin(); i!=r.end(); ++i)
+            init += do_moves(M[i], X, S, kT);
+          return init;
+        }, [](double x, double y)->double {
+          return x + y;
+        });
     });
 
     g.wait();
@@ -226,7 +234,8 @@ void sweep(vector<Move>* M, SimArray<int>& X, SimArray<int>& S, double& e, const
   }
 }
 
-void do_moves(vector<Move>& Mi, SimArray<int>& X, SimArray<int>& S, double& e, const double kT) {
+double do_moves(vector<Move>& Mi, SimArray<int>& X, SimArray<int>& S, const double kT) {
+  double e = 0.0;
   /* cout << "making moves for i = " << i << endl; */
   while (Mi.size() > 0) {
     Move move = Mi.back();
@@ -268,6 +277,7 @@ void do_moves(vector<Move>& Mi, SimArray<int>& X, SimArray<int>& S, double& e, c
       }
     }
   }
+  return e;
 }
 
 //Calculate energy of full box
