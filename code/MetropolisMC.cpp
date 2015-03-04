@@ -90,6 +90,8 @@ int main(int argc, char* argv[]) {
   double e = energy(*X_ptr, *S_ptr)/kT;
   cout << "\nInitial energy (E/kT): " << e << endl;
 
+  auto start = chrono::high_resolution_clock::now();
+
   //Run through equilibration sweeps
   for (int t=1; t <= eqSweeps; t++) {
     //Run one full sweep
@@ -103,6 +105,11 @@ int main(int argc, char* argv[]) {
       cout << " E/kT(updated)=" << e << endl;
     }
   }
+
+  auto end = chrono::high_resolution_clock::now();
+
+  //Calculate time in equilibration sweeps
+  auto eqDuration = chrono::duration_cast<chrono::milliseconds>(end - start);
 
   //Check the histogram just to see if we have one or two phases
   SimArray<double> Theta = phase_parameter(*X_ptr);
@@ -118,6 +125,8 @@ int main(int argc, char* argv[]) {
   double eAvg;
   //Phase Diagram run variable
   array<double, 2> XA;
+
+  start = chrono::high_resolution_clock::now();
 
   //Run through data sweeps (collecting data every sweep)
   cout << "*********************\nBeginning data sweeps\n*********************" << endl;
@@ -152,9 +161,16 @@ int main(int argc, char* argv[]) {
     */
   }
 
+  end = chrono::high_resolution_clock::now();
+
+  auto dataDuration = chrono::duration_cast<chrono::milliseconds>(end - start);
+
   //Print out information collected in data sweeps
   cout << "Average energy (E/kT): " << eAvg << endl;
   cout << "XA (A-rich): " << XA[0] << " XA (B-rich):" << XA[1] << endl;
+
+  cout << "\nTime spent in equilibration sweeps: " << eqDuration.count() << endl;
+  cout << "Time spent in data sweeps: " << dataDuration.count() << endl;
 
   auto end_time = chrono::system_clock::to_time_t(chrono::system_clock::now());
   cout << "\nFinished simulation on " << ctime(&end_time) << endl;
