@@ -100,7 +100,4 @@
 \vspace{-7pt}
 \indent\indent In addition to the parallelization described above, we can further parallelize the simulation by splitting data sweeps. Assuming the system is at equilibrium, each data sweep simply serves to collect more data about a system that is no longer changing. We could easily split the data sweeps across nodes (potentially using MPI) and have each node collect data independently, only communicating at the very end to average the results. We have not implemented this yet, but it should provide easy scalability.
 
-
-
-
 \end{document}
