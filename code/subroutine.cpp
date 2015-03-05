@@ -31,7 +31,7 @@ void gen_moves(SimArray<int>& Y, vector<Move>& moves, vector<Move>* M) {
     for(int j=0; j<Ly; j++) {
       for(int k=0; k<Lz; k++) {
         // Initialize to 0
-        Y[i][j][k] = 0;
+        Y(i, j, k) = 0;
       }
     }
   }
@@ -80,8 +80,8 @@ int check_conflicts(SimArray<int>& Y, Move& move, int pc) {
   if (move.type) { // swap
     for (int i = 0; i < 3; i++) {
       for (int j = -1; j <= 1; j += 2) {
-        cell = Y[mod(move.cell0[0] + (i==2)*j, Lx)][mod(move.cell0[1] +
-            (i==1)*j, Ly)][mod(move.cell0[2] + (i==0)*j, Lz)];
+        cell = Y(mod(move.cell0[0] + (i==2)*j, Lx), mod(move.cell0[1] +
+            (i==1)*j, Ly), mod(move.cell0[2] + (i==0)*j, Lz));
         /* cout << "cell coordinates: " << mod(move->cell0[0] + (i==2)*j, Lx) << */
         /*   ", " << mod(move->cell0[1] + (i==1)*j, Ly) << ", " << */
         /*   mod(move->cell0[2] + (i==0)*j, Lz) << endl; */
@@ -97,8 +97,8 @@ int check_conflicts(SimArray<int>& Y, Move& move, int pc) {
     }
     for (int i = 0; i < 3; i++) {
       for (int j = -1; j <= 1; j += 2) {
-        cell = Y[mod(move.cell1[0] + (i==2)*j, Lx)][mod(move.cell1[1] +
-            (i==1)*j, Ly)][mod(move.cell1[2] + (i==0)*j, Lz)];
+        cell = Y(mod(move.cell1[0] + (i==2)*j, Lx), mod(move.cell1[1] +
+            (i==1)*j, Ly), mod(move.cell1[2] + (i==0)*j, Lz));
         /* cout << "cell coordinates: " << mod(move->cell1[0] + (i==2)*j, Lx) << */
         /*   ", " << mod(move->cell1[1] + (i==1)*j, Ly) << ", " << */
         /*   mod(move->cell1[2] + (i==0)*j, Lz) << endl; */
@@ -113,13 +113,13 @@ int check_conflicts(SimArray<int>& Y, Move& move, int pc) {
       }
     }
     if (conflict_processor > 0) pc = conflict_processor;
-    Y[move.cell0[0]][move.cell0[1]][move.cell0[2]] = pc;
-    Y[move.cell1[0]][move.cell1[1]][move.cell1[2]] = pc;
+    Y(move.cell0[0], move.cell0[1], move.cell0[2]) = pc;
+    Y(move.cell1[0], move.cell1[1], move.cell1[2]) = pc;
   } else { // rotation
     for (int i = 0; i < 3; i++) {
       for (int j = -1; j <= 1; j += 2) {
-        cell = Y[mod(move.cell0[0] + (i==2)*j, Lx)][mod(move.cell0[1] +
-            (i==1)*j, Ly)][mod(move.cell0[2] + (i==0)*j, Lz)];
+        cell = Y(mod(move.cell0[0] + (i==2)*j, Lx), mod(move.cell0[1] +
+            (i==1)*j, Ly), mod(move.cell0[2] + (i==0)*j, Lz));
         /* cout << "cell coordinates: " << mod(move->cell0[0] + (i==2)*j, Lx) << */
         /*   ", " << mod(move->cell0[1] + (i==1)*j, Ly) << ", " << */
         /*   mod(move->cell0[2] + (i==0)*j, Lz) << endl; */
@@ -134,7 +134,7 @@ int check_conflicts(SimArray<int>& Y, Move& move, int pc) {
       }
     }
     if (conflict_processor > 0) pc = conflict_processor;
-    Y[move.cell0[0]][move.cell0[1]][move.cell0[2]] = pc;
+    Y(move.cell0[0], move.cell0[1], move.cell0[2]) = pc;
   }
   return conflict_processor;
 }
@@ -149,7 +149,7 @@ void sweep(vector<Move>* M, SimArray<int>& X, SimArray<int>& S, double& e, const
   Move move;
 
   // Y is used to keep track of move assignment
-  SimArray<int>* Y_ptr = new SimArray<int>;
+  SimArray<int>* Y_ptr = new SimArray<int>(Lx, Ly, Lz);
 
   // Next batch
   vector<Move>* N = new vector<Move>[np];
@@ -235,9 +235,9 @@ double do_moves(vector<Move>& Mi, SimArray<int>& X, SimArray<int>& S, const doub
       //Check whether to accept move or not
       if ((double)rand()/(double)RAND_MAX < exp(-de)) {
         //Accept move. Update orientation and energy
-        int x = X[i][j][k]; int s = S[i][j][k];
-        X[i][j][k] = X[ii][jj][kk]; S[i][j][k] = S[ii][jj][kk];
-        X[ii][jj][kk] = x; S[ii][jj][kk] = s;
+        int x = X(i, j, k); int s = S(i, j, k);
+        X(i, j, k) = X(ii, jj, kk); S(i, j, k) = S(ii, jj, kk);
+        X(ii, jj, kk) = x; S(ii, jj, kk) = s;
         e += de;
       }
     } else { // rotation
@@ -253,7 +253,7 @@ double do_moves(vector<Move>& Mi, SimArray<int>& X, SimArray<int>& S, const doub
       //Check whether to accept or not
       if ((double)rand()/(double)RAND_MAX < exp(-de)) {
         //Accept move. Update orientation and energy
-        S[i][j][k] = q;
+        S(i, j, k) = q;
         e += de;
       }
     }
@@ -274,9 +274,9 @@ double energy(const SimArray<int>& X, const SimArray<int>& S) {
         int kk = mod(k+1, Lz);
 
         //Calculate pairwise energy (forward in each direction)
-        e += pairwise_energy(X[i][j][k], X[ii][j][k], S[i][j][k], S[ii][j][k]);
-        e += pairwise_energy(X[i][j][k], X[i][jj][k], S[i][j][k], S[i][jj][k]);
-        e += pairwise_energy(X[i][j][k], X[i][j][kk], S[i][j][k], S[i][j][kk]);
+        e += pairwise_energy(X(i, j, k), X(ii,j,k), S(i, j, k), S(ii, j, k));
+        e += pairwise_energy(X(i, j, k), X(i,jj,k), S(i, j, k), S(i, jj, k));
+        e += pairwise_energy(X(i, j, k), X(i,j,kk), S(i, j, k), S(i, j, kk));
       }
     }
   }
@@ -300,12 +300,12 @@ double pairwise_energy(int m1, int m2, int s1, int s2) {
 //Calculate the energy with nearest neighbors at point (i,j,k)
 double point_energy(const SimArray<int>& X, const SimArray<int>& S, int i, int j, int k) {
   //Calculate each pairwise energy
-  double e = pairwise_energy(X[i][j][k], X[mod(i+1, Lx)][j][k], S[i][j][k], S[mod(i+1, Lx)][j][k]);
-  e += pairwise_energy(X[i][j][k], X[mod(i-1, Lx)][j][k], S[i][j][k], S[mod(i-1, Lx)][j][k]);
-  e += pairwise_energy(X[i][j][k], X[i][mod(j+1, Ly)][k], S[i][j][k], S[i][mod(j+1, Ly)][k]);
-  e += pairwise_energy(X[i][j][k], X[i][mod(j-1, Ly)][k], S[i][j][k], S[i][mod(j-1, Ly)][k]);
-  e += pairwise_energy(X[i][j][k], X[i][j][mod(k+1, Lz)], S[i][j][k], S[i][j][mod(k+1, Lz)]);
-  e += pairwise_energy(X[i][j][k], X[i][j][mod(k-1, Lz)], S[i][j][k], S[i][j][mod(k-1, Lz)]);
+  double e = pairwise_energy(X(i, j, k), X(mod(i+1, Lx), j, k), S(i, j, k), S(mod(i+1, Lx), j, k));
+  e += pairwise_energy(X(i, j, k), X(mod(i-1, Lx), j ,k), S(i, j, k), S(mod(i-1, Lx), j, k));
+  e += pairwise_energy(X(i, j, k), X(i, mod(j+1, Ly), k), S(i, j, k), S(i, mod(j+1, Ly), k));
+  e += pairwise_energy(X(i, j, k), X(i, mod(j-1, Ly), k), S(i, j, k), S(i, mod(j-1, Ly), k));
+  e += pairwise_energy(X(i, j, k), X(i, j, mod(k+1, Lz)), S(i, j, k), S(i, j, mod(k+1, Lz)));
+  e += pairwise_energy(X(i, j, k), X(i, j, mod(k-1, Lz)), S(i, j, k), S(i, j, mod(k-1, Lz)));
 
   return e;
 }
@@ -313,19 +313,19 @@ double point_energy(const SimArray<int>& X, const SimArray<int>& S, int i, int j
 //Calculate the energy in a rotation move
 double rotation_energy_change(const SimArray<int>& S, int i, int j, int k, int q2) {
   //Store original orientation
-  int q1 = S[i][j][k];
+  int q1 = S(i, j, k);
 
   int qOrig = 0, qNew = 0;
   //Only calculate if it actually makes a difference
   if (q1 != q2) {
     //Store neighboring orientations for ease
     vector<int> o;
-    o.push_back(S[mod(i-1,Lx)][j][k]);
-    o.push_back(S[mod(i+1,Lx)][j][k]);
-    o.push_back(S[i][mod(j-1,Ly)][k]);
-    o.push_back(S[i][mod(j+1,Ly)][k]);
-    o.push_back(S[i][j][mod(k-1,Lz)]);
-    o.push_back(S[i][j][mod(k+1,Lz)]);
+    o.push_back(S(mod(i-1,Lx), j, k));
+    o.push_back(S(mod(i+1,Lx), j, k));
+    o.push_back(S(i, mod(j-1,Ly), k));
+    o.push_back(S(i, mod(j+1,Ly), k));
+    o.push_back(S(i, j, mod(k-1,Lz)));
+    o.push_back(S(i, j, mod(k+1,Lz)));
 
     //Count number of orientation matches in both cases
     for (int q : o) {
@@ -349,19 +349,19 @@ double particle_swap_energy_change(SimArray<int>& X, SimArray<int>& S, int i, in
   double e1 = point_energy(X, S, i, j, k) + point_energy(X, S, ii, jj, kk);
 
   //Save original information
-  int m1 = X[i][j][k], m2 = X[ii][jj][kk];
-  int s1 = S[i][j][k], s2 = S[ii][jj][kk];
+  int m1 = X(i, j, k), m2 = X(ii, jj, kk);
+  int s1 = S(i, j, k), s2 = S(ii, jj, kk);
 
   //Update identity and orientation
-  X[i][j][k] = m2; X[ii][jj][kk] = m1;
-  S[i][j][k] = s2; S[ii][jj][kk] = s1;
+  X(i, j, k) = m2; X(ii, jj, kk) = m1;
+  S(i, j, k) = s2; S(ii, jj, kk) = s1;
 
   //Calculate energy with new orientation
   double e2 = point_energy(X, S, i, j, k) + point_energy(X, S, ii, jj, kk);
 
   //Restore old identity and orientation
-  X[i][j][k] = m1; X[ii][jj][kk] = m2;
-  S[i][j][k] = s1; S[ii][jj][kk] = s2;
+  X(i, j, k) = m1; X(ii, jj, kk) = m2;
+  S(i, j, k) = s1; S(ii, jj, kk) = s2;
 
   return (e2-e1);
 }
@@ -369,13 +369,13 @@ double particle_swap_energy_change(SimArray<int>& X, SimArray<int>& S, int i, in
 //Calculate full arrays for phase parameters (TODO: Highly parallelizable)
 SimArray<double> phase_parameter(const SimArray<int>& X) {
   //Initialize temp arrays
-  SimArray<double> theta, Theta;
+  SimArray<double> theta(Lx, Ly, Lz), Theta(Lx, Ly, Lz);
 
   //Calculate theta from x
   for (int i = 0; i < Lx; i++) {
     for (int j = 0; j < Ly; j++) {
       for (int k = 0; k < Lz; k++) {
-        theta[i][j][k] = local_phase_parameter(X, i, j, k);
+        theta(i, j, k) = local_phase_parameter(X, i, j, k);
       }
     }
   }
@@ -384,7 +384,7 @@ SimArray<double> phase_parameter(const SimArray<int>& X) {
   for (int i = 0; i < Lx; i++) {
     for (int j = 0; j < Ly; j++) {
       for (int k = 0; k < Lz; k++) {
-        Theta[i][j][k] = medium_phase_parameter(theta, i, j, k);
+        Theta(i, j, k) = medium_phase_parameter(theta, i, j, k);
       }
     }
   }
@@ -399,12 +399,12 @@ double local_phase_parameter(const SimArray<int>& X, int i, int j, int k) {
   double theta = 0.5;
 
   //Sum over nearest, next-nearest, and next-next-neighbors (3x3x3 cube)
-  int id = X[i][j][k];
+  int id = X(i, j, k);
   for (int ip = -1; ip <= 1; ip++) {
     for (int jp = -1; jp <= 1; jp++) {
       for (int kp = -1; kp <= 1; kp++) {
         //Add 1/(2*26) for same species, -1/(2*26) for opposite species
-        if (id == X[mod(i+ip, Lx)][mod(j+jp, Ly)][mod(k+kp, Lz)]) {
+        if (id == X(mod(i+ip, Lx), mod(j+jp, Ly), mod(k+kp, Lz))) {
           if (id == 1) {
             theta += 1.0/52.0;
           } else {
@@ -440,7 +440,7 @@ double medium_phase_parameter(const SimArray<double>& theta, int i, int j, int k
   for (int ip = -1; ip <= 1; ip++) {
     for (int jp = -1; jp <= 1; jp++) {
       for (int kp = -1; kp <= 1; kp++) {
-        Theta += theta[mod(i+ip, Lx)][mod(j+jp, Ly)][mod(k+kp, Lz)];
+        Theta += theta(mod(i+ip, Lx), mod(j+jp, Ly), mod(k+kp, Lz));
       }
     }
   }
@@ -459,14 +459,14 @@ array<double, 2> phase_data(const SimArray<int>& X, const SimArray<double>& para
   for (int i = 0; i < Lx; i++) {
     for (int j = 0; j < Ly; j++) {
       for (int k = 0; k < Lz; k++) {
-        if (param[i][j][k] >= cutoff) {
+        if (param(i, j, k) >= cutoff) {
           n[0]++;
-          if (X[i][j][k] == 1) {
+          if (X(i, j, k) == 1) {
             nA[0]++;
           }
         } else {
           n[1]++;
-          if (X[i][j][k] == 1) {
+          if (X(i, j, k) == 1) {
             nA[1]++;
           }
         }
@@ -516,7 +516,7 @@ void print_VMD_snapshot(SimArray<int>& X, SimArray<int>& S, int t) {
   for (int i = 0; i < Lx; i++) {
     for (int j = 0; j < Ly; j++) {
       for (int k = 0; k < Lz; k++) {
-        VMDFILE << (Ly*Lz*i + Lz*j + k) << " " << (10*X[i][j][k]+S[i][j][k]) << " ";
+        VMDFILE << (Ly*Lz*i + Lz*j + k) << " " << (10*X(i, j, k)+S(i, j, k)) << " ";
         VMDFILE << i << " " << j << " " << k << endl;
       }
     }

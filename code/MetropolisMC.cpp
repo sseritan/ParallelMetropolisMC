@@ -72,8 +72,8 @@ int main(int argc, char* argv[]) {
   srand(seed);
 
   //Initialize identity and orientation arrays
-  SimArray<int>* X_ptr = new SimArray<int>;
-  SimArray<int>* S_ptr = new SimArray<int>;
+  SimArray<int>* X_ptr = new SimArray<int>(Lx, Ly, Lz);
+  SimArray<int>* S_ptr = new SimArray<int>(Lx, Ly, Lz);
 
   //Initialize array for checking conflicts
   vector<Move>* M = new vector<Move>[np];
@@ -82,9 +82,9 @@ int main(int argc, char* argv[]) {
     for(int j=0; j<Ly; j++) {
       for(int k=0; k<Lz; k++) {
         //Seed identity so that target composition is met
-        (*X_ptr)[i][j][k] = ((k<compA*Lz) ? 1 : 2);
+        (*X_ptr)(i,j,k) = ((k<compA*Lz) ? 1 : 2);
         //Uniform orientation
-        (*S_ptr)[i][j][k] = 1;
+        (*S_ptr)(i,j,k) = 1;
       }
     }
   }

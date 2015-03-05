@@ -49,9 +49,31 @@ struct Move {
 template <typename T, size_t x, size_t y, size_t z>
 using Dim3Array = std::array<std::array<std::array<T, z>, y>, x>;
 
-//Specific 3D array that is the fixed size of the box
-template <typename T>
-using SimArray = Dim3Array<T, Lx, Ly, Lz>;
+template<class T>
+class SimArray {
+public:
+  typedef SimArray<T>                               this_type;
+  typedef std::vector<T>                           data_type;
+  typedef typename std::vector<T>::value_type      value_type;
+  typedef typename std::vector<T>::size_type       size_type;
+  typedef typename std::vector<T>::reference       reference;
+  typedef typename std::vector<T>::const_reference const_reference;
+  size_type lx, ly, lz;
+  data_type data;
+  // zero/value initialized matrix rows*cols
+  SimArray (size_type x, size_type y, size_type z)
+  : lx(x), ly(y), lz(z), data(x*y*z, T()) {}
+  // copy initialized matrix rows*cols
+  SimArray (size_type x, size_type y, size_type z, const_reference val)
+  : lx(x), ly(y), lz(z), data(x*y*z, T()) {}
+  // element access
+  reference operator() (size_type x, size_type y, size_type z) {
+    return data[(lx*ly)*z + lx*y + x];
+  }
+  const_reference operator() (size_type x, size_type y, size_type z) const {
+    return data[(lx*ly)*z + lx*y + x];
+  }
+};
 
 //Specific 2D array for the 2d histogram
 using Dim2Array = std::array<std::array<double, 100>, 100>;
