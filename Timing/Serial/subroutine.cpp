@@ -177,37 +177,25 @@ double particle_swap_energy_change(SimArray<int>& X, SimArray<int>& S, int i, in
   return (e2-e1);
 }
 
-//Calculate full arrays for phase parameters
+//Calculate full arrays for phase parameters (TODO: Highly parallelizable)
 SimArray<double> phase_parameter(const SimArray<int>& X) {
   //Initialize temp arrays
   SimArray<double> theta, Theta;
 
-  //Calculate theta from x (blocks)
-  cilk_for (int x = 0; x < Lx; x += 5) {
-    cilk_for (int y = 0; y < Ly; y += 5) {
-      cilk_for (int z = 0; z < Lz; z += 5) {
-        for (int i = x; i < x+5; i++) {
-          for (int j = y; j < y+5; j++) {
-            for (int k = z; k < z+5; k++) {
-              theta[i][j][k] = local_phase_parameter(X, i, j, k);
-            }
-          }
-        }
+  //Calculate theta from x
+  cilk_for (int i = 0; i < Lx; i++) {
+    cilk_for (int j = 0; j < Ly; j++) {
+      for (int k = 0; k < Lz; k++) {
+        theta[i][j][k] = local_phase_parameter(X, i, j, k);
       }
     }
   }
 
   //Calculate Theta from theta
-  cilk_for (int x = 0; x < Lx; x += 5) {
-    cilk_for (int y = 0; y < Ly; y += 5) {
-      cilk_for (int z = 0; z < Lz; z += 5) {
-        for (int i = x; i < x+5; i++) {
-          for (int j = y; j < y+5; j++) {
-            for (int k = 0; k < Lz; k++) {
-              Theta[i][j][k] = medium_phase_parameter(theta, i, j, k);
-            }
-          }
-        }
+  cilk_for (int i = 0; i < Lx; i++) {
+    cilk_for (int j = 0; j < Ly; j++) {
+      for (int k = 0; k < Lz; k++) {
+        Theta[i][j][k] = medium_phase_parameter(theta, i, j, k);
       }
     }
   }
