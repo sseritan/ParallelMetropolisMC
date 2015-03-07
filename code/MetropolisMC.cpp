@@ -26,7 +26,8 @@
 
 //Local include
 #include "./MetropolisMC.hpp"
-#include "./subroutine.cpp"
+//#include "./subroutine.cpp"
+#include "./Simulation.hpp"
 
 using namespace std;
 
@@ -34,11 +35,12 @@ int main(int argc, char* argv[]) {
   //Set output precision
   cout.precision(2); cout << fixed;
 
-  int runType, eqSweeps, dataSweeps;
+  int runType, x, y, z, eqSweeps, dataSweeps;
   double kT, compA, cutoff;
-  if (argc != 6) {
-    cout << "Usage:\n./MetropolisMC <Temp> <Eq. Sweeps> <Data Sweeps> <CompA> <Cutoff>" << endl;
+  if (argc != 9) {
+    cout << "Usage:\n./MetropolisMC <kT> <x> <y> <z> <Eq. Sweeps> <Data Sweeps> <CompA> <Cutoff>" << endl;
     cout << "Temp is kT. Acceptance is based on exp(-energy/kT). Higher kT basically allows less favored moves still get accepted, equivalent to higher temperature." << endl;
+    cout << "x, y, and z are the sizes of the 3D lattice." << endl;
     cout << "Eq. Sweeps is the number of sweeps to reach equilibrium (no data collected). Equilibrium reached when energy doesn't change." << endl;
     cout << "Data. Sweeps is the number of sweeps where we collect energy and phase data between sweeps. More data sweeps, the better the collected statistics (weak law of large numbers)." << endl;
     cout << "CompA is a number between 0 and 1 that sets an initial fraction of the identities to 1 (species A)." << endl;
@@ -48,24 +50,28 @@ int main(int argc, char* argv[]) {
   } else {
     //Parse arguments
     kT = (double)atof(argv[1]);
-    eqSweeps = atoi(argv[2]);
-    dataSweeps = atoi(argv[3]);
-    compA = (double)atof(argv[4]);
-    cutoff = (double)atof(argv[5]);
+    x = atoi(argv[2]);
+    y = atoi(argv[3]);
+    z = atoi(argv[4]);
+    eqSweeps = atoi(argv[5]);
+    dataSweeps = atoi(argv[6]);
+    compA = (double)atof(argv[7]);
+    cutoff = (double)atof(argv[8]);
   }
 
   //Print out simulation information
   cout << "SIMULATION DETAILS" << endl;
   auto start_time = chrono::system_clock::to_time_t(chrono::system_clock::now());
   cout << "Started simulation on " << ctime(&start_time) << endl;
-  cout << "Box Dimensions: " << Lx << "x" << Ly << "x" << Lz << endl;
   cout << "Temperature: " << kT << endl;
   cout << "Hamiltonian: K=" << K << " A=" << A << endl;
   cout << "Move probabilities: Rotation=" << ROTATION << " Particle Swap=" << PARTSWAP << endl;
   cout << "Sweep information: Equilibration=" << eqSweeps << " Data Gathering=" << dataSweeps << endl;
-  cout << "Seeding box with " << (int)floorf(compA*Lx*Ly*Lz) << " particles of species A" << endl;
   cout << "Using Theta cutoff value of " << cutoff << endl;
 
+  Simulation* sim = new Simulation(x, y, z, compA);
+  delete sim;
+  /*
   //Initialize random number generator
   auto seed = chrono::high_resolution_clock::now().time_since_epoch().count();
   cout << "Using seed " << seed << " for srand()." << endl;
@@ -134,13 +140,11 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    /*
     //Print snapshots every 10000 sweeps, just to see what's up
     if (t%10000 == 0) {
       cout << "Printing VMD snapshot at " << t << " data sweeps." << endl;
       print_VMD_snapshot(*X_ptr, *S_ptr, t);
     }
-    */
   }
 
   //Print out information collected in data sweeps
@@ -152,6 +156,8 @@ int main(int argc, char* argv[]) {
 
   //Memory Management
   delete X_ptr; delete S_ptr;
+  
+  */
 
   //Exit successfully
   return 0;

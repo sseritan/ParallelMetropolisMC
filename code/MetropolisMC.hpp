@@ -19,11 +19,6 @@
 //Orientations
 #define Q 6
 
-//Lattice Size
-#define Lx 10
-#define Ly 10
-#define Lz 10
-
 //Hamiltonian definition
 #define K 0.5
 #define A 1.0
@@ -33,7 +28,7 @@
 #define PARTSWAP 0.5
 
 /* TEMPLATED DATA STRUCTURES */
-
+/*
 //Template class to make a 3d array
 template <typename T, size_t x, size_t y, size_t z>
 using Dim3Array = std::array<std::array<std::array<T, z>, y>, x>;
@@ -45,7 +40,7 @@ using SimArray = Dim3Array<T, Lx, Ly, Lz>;
 //Specific 2D array for the 2d histogram
 using Dim2Array = std::array<std::array<double, 100>, 100>;
 
-/* FUNCTION PROTOTYPES */
+// FUNCTION PROTOTYPES
 //Main simulation functions
 void sweep(SimArray<int>& X, SimArray<int>& S, double& e, const double kT);
 int mod(int k, int n);
@@ -67,6 +62,6 @@ std::array<double, 2> phase_data(const SimArray<int>& X, const SimArray<double>&
 
 //I/O Functions
 void print_VMD_snapshot(SimArray<int>& X, SimArray<int>& S, int t);
-
+*/
 #endif
 
