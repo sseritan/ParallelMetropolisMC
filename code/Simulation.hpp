@@ -33,6 +33,7 @@ class Cell {
     Cell* getKm() {return km;}
     Cell* getKp() {return kp;}
     //Setters
+    void setId(int i) {id = i;}
     void setOr(int o) {orient = o;}
     void pushUpdate(int m);
     void resetUpdate();
@@ -45,6 +46,9 @@ class Cell {
     //Energy functions
     double pairEnergy(int i, int o, int q);
     double pointEnergy(int i, int o);
+    //Data functions
+    void thetaInit();
+    double calcTheta();
     //Utility functions
     int isNeighbor(Cell* c);
     void swapIdOr(Cell* c);
@@ -79,6 +83,23 @@ class Simulation {
     double getEnergy();
     double* calcThetaHistogram();
     double* calcX1();
+
+    //TESTING FUNCTIONS
+    //Test constructor (predetermined 4x4x4)
+    Simulation(int dummy);
+    //Test helper function
+    int testChange(double r, double e);
+    //Rotation tests
+    int rot_no_change();
+    int rot_good_change();
+    int rot_bad_change();
+    //Swap tests
+    int swap_no_change();
+    int swap_good_change();
+    int swap_bad_change();
+    int swap_nn_no_change();
+    int swap_nn_good_change();
+    int swap_nn_bad_change();
 };
 
 #endif

@@ -14,9 +14,11 @@
 
 using namespace std;
 
+
 /***********************
  * Cell PUBLIC FUNCTIONS
  ***********************/
+
 
 //Constructor
 Cell::Cell(int i, int o) {
@@ -80,6 +82,53 @@ double Cell::pointEnergy(int i, int o) {
   return e;
 }
 
+//Initialize theta (M=6) for a lattice position
+//From V. Argawal and B. Peters, J. Chem. Phys. 140, 084111
+void Cell::thetaInit() {
+  theta = 0.5;
+
+  //Run through neighbors
+  if (id == im->id) {
+    theta += 1.0/12.0;
+  }
+  if (id == ip->id) {
+    theta += 1.0/12.0;
+  }
+  if (id == jm->id) {
+    theta += 1.0/12.0;
+  }
+  if (id == jp->id) {
+    theta += 1.0/12.0;
+  }
+  if (id == km->id) {
+    theta += 1.0/12.0;
+  }
+  if (id == kp->id) {
+    theta += 1.0/12.0;
+  }
+
+  //If id = 2, we actually wanted to flip it towards 0
+  if (id == 2) {
+    theta = 1.0 - theta;
+  }
+}
+
+//Average thetas into Theta (M=7) for a lattice position
+//From V. Argawal and B. Peters, J. Chem. Phys. 140, 084111
+double Cell::calcTheta() {
+  //Sum thetas
+  double Theta = theta;
+  Theta += im->theta;
+  Theta += ip->theta;
+  Theta += jm->theta;
+  Theta += jp->theta;
+  Theta += km->theta;
+  Theta += kp->theta;
+
+  //Average out Theta
+  return Theta/7.0;
+}
+
 //Checks to see if a Cell is a neighbor
 int Cell::isNeighbor(Cell* c) {
   if (im == c || ip == c || jm == c || jp == c || km == c || km == c) {
@@ -104,9 +153,12 @@ void Cell::swapIdOr(Cell* c) {
   return;
 }
 
+
 /******************************
  * Simulation PRIVATE FUNCTIONS
  ******************************/
+
+
 //1D periodic boundary condition
 int Simulation::wrap1d(int coord, int dir, int step) {
   coord += step;
@@ -187,7 +239,7 @@ double Simulation::swapChange(Cell* c1, Cell* c2) {
   return (e2 - e1);
 }
 
-//Calculate theta (M=26)
+/*Calculate theta (M=26)
 //From V. Argawal and B. Peters, J. Chem. Phys. 140, 084111
 double* Simulation::calctheta() {
   //Initialize
@@ -207,7 +259,11 @@ double* Simulation::calctheta() {
     for (int a = -1; a < 2; a++) {
       for (int b = -1; b < 2; b++) {
         for (int c = -1; c < 2; c++) {
-          if (id == array[wrap1d(x, 0, a) + wrap1d(y, 1, b)*Lx + wrap1d(z, 2, c)*Lx*Ly]->getId()) {
+          //Convert back to 1D coord
+          int index = wrap1d(x, 0, a) + wrap1d(y, 1, b)*Lx + wrap1d(z, 2, c)*Lx*Ly;
+
+          //Increase theta if id match
+          if (id == array[index]->getId()) {
             theta[i] += 1.0/52.0;
           }
         }
@@ -226,7 +282,7 @@ double* Simulation::calctheta() {
   return theta;
 }
 
-//Calculate Theta (M=26)
+//Calculate Theta (M=27)
 //From V. Argawal and B. Peters, J. Chem. Phys. 140, 084111
 double* Simulation::calcTheta() {
   //Initialize
@@ -244,9 +300,9 @@ double* Simulation::calcTheta() {
     int z = i/(Lx*Ly);
 
     //Run through neighbors
-    for (int a = -1; a < 2; a++) {
-      for (int b = -1; b < 2; b++) {
-        for (int c = -1; c < 2; c++) {
+    for (int a = -1; a <= 1; a++) {
+      for (int b = -1; b <= 1; b++) {
+        for (int c = -1; c <= 1; c++) {
           Theta[i] += theta[wrap1d(x, 0, a) + wrap1d(y, 1, b)*Lx + wrap1d(z, 2, c)*Lx*Ly];
         }
       }
@@ -261,10 +317,12 @@ double* Simulation::calcTheta() {
 
   return Theta;
 }
+*/
 
 /*****************************
  * Simulation PUBLIC FUNCTIONS
  *****************************/
+
 
 //Constructor
 Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
@@ -302,6 +360,9 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
     array[i]->setJp(array[wrap3d(i, 1, 1)]);
     array[i]->setKm(array[wrap3d(i, 2, -1)]);
     array[i]->setKp(array[wrap3d(i, 2, 1)]);
+
+    //Initialize theta
+    array[i]->thetaInit();
   }
 
 
@@ -355,6 +416,7 @@ void Simulation::doSweep() {
 
         //Update energy
         energy += de;
+        cout << "Rotation change " << de << " Accepted." << endl;
       }
     } else {
       //Particle swap move
@@ -375,6 +437,7 @@ void Simulation::doSweep() {
 
         //Update energy
         energy += de;
+        cout << "Swap change " << de << " Accepted." << endl;
       }
     }
   }
@@ -392,11 +455,11 @@ double* Simulation::calcThetaHistogram() {
     h[i] = 0.0;
   }
 
-  double* Theta = calcTheta();
+  /* double* Theta = calcTheta(); */
 
   for (int i = 0; i < NMAX; i++) {
-    //Get index in histogram (if Theta = 1.00, still in bin 99)
-    int index = floorf(Theta[i]*100);
+    //Get index in histogram
+    int index = floorf(array[i]->calcTheta()*100);
     if (index < 0) index = 0;
     if (index > 99) index = 99;
 
@@ -405,11 +468,11 @@ double* Simulation::calcThetaHistogram() {
 
   //Normalize
   for (int i = 0; i < 100; i++) {
-    h[i] /= NMAX;
+    h[i] /= (double)NMAX;
   }
 
   //Memory Management
-  delete[] Theta;
+  //delete[] Theta;
 
   return h;
 }
@@ -418,11 +481,11 @@ double* Simulation::calcX1() {
   int n [2] = {0, 0}; //Number of particles in each phase
   int n1 [2] = {0, 0}; // Number of species i in each phase
 
-  double* Theta = calcTheta();
+  //double* Theta = calcTheta();
 
   for (int i = 0; i < NMAX; i++) {
     //Decide if in 1-rich or 2-rich phase
-    if (Theta[i] >= cutoff) {
+    if (array[i]->calcTheta() >= cutoff) {
       n[0]++;
       if (array[i]->getId() == 1) {
         n1[0]++;
@@ -436,7 +499,7 @@ double* Simulation::calcX1() {
   }
 
   //Memory Management
-  delete[] Theta;
+  //delete[] Theta;
 
   //Calculate mole fraction from n1/n for each phase
   double* X1 = new double [2];
@@ -445,4 +508,142 @@ double* Simulation::calcX1() {
   }
 
   return X1;
+}
+
+
+/***************************
+ * Simulation TEST FUNCTIONS
+ ***************************/
+
+
+//Dummy constructor
+Simulation::Simulation(int dummy) {
+  Lx = 4; Ly = 4; Lz = 4;
+  NMAX = Lx*Ly*Lz;
+  kT = 1;
+  cutoff = 0;
+  cout << "\nINPUT DETAILS" << endl;
+  cout << "Lattice dimensions of " << Lx << "x" << Ly << "x" << Lz << endl;
+  cout << "Temperature (kT) of " << kT << endl;
+
+  //Allocate array of Cells
+  array = new Cell* [NMAX];
+
+  //Initialize cells
+  //Set species 1
+  for (int i = 0; i < NMAX; i++) {
+    array[i] = new Cell(1, 1);
+  }
+
+  //Secondary cell initialization
+  for (int i = 0; i < NMAX; i++) {
+    //Link cell with neighbors
+    array[i]->setIm(array[wrap3d(i, 0, -1)]);
+    array[i]->setIp(array[wrap3d(i, 0, 1)]);
+    array[i]->setJm(array[wrap3d(i, 1, -1)]);
+    array[i]->setJp(array[wrap3d(i, 1, 1)]);
+    array[i]->setKm(array[wrap3d(i, 2, -1)]);
+    array[i]->setKp(array[wrap3d(i, 2, 1)]);
+  }
+
+  //Initialize random number generation
+  auto seed = chrono::high_resolution_clock::now().time_since_epoch().count();
+  cout << "Using seed " << seed << " for srand()" << endl;
+  srand(seed);
+
+  //Hardcode some cells for testing (id and orient are the same for simplicity)
+  //k = 0    k = 1    k = 2    k=3
+  //1 1 1 1  - 1 - -  - - - -  - 1 - -
+  //1 1 1 2  - 1 - 1  - - - -  - 1 - 1
+  //2 1 2 1  - - 1 -  - - - -  - - 1 -
+  //2 1 1 2  1 - - -  - - - -  2 - - -
+  array[7]->setId(2); array[7]->setOr(2);
+  array[8]->setId(2); array[8]->setOr(2);
+  array[10]->setId(2); array[10]->setOr(2);
+  array[12]->setId(2); array[12]->setOr(2);
+  array[15]->setId(2); array[15]->setOr(2);
+  
+  array[60]->setId(2); array[60]->setOr(2);
+
+  //Initialize thetas and energies
+  energy = 0.0;
+  for (int i = 0; i < NMAX; i++) {
+    //Calculate pairwise energy with forward pairs in each direction
+    energy += array[i]->pairEnergy(-1, -1, 2); //In forward i direction
+    energy += array[i]->pairEnergy(-1, -1, 4); //In forward j direction
+    energy += array[i]->pairEnergy(-1, -1, 6); //In forward k direction
+
+    array[i]->thetaInit();
+  }
+}
+
+int Simulation::testChange(double r, double e) {
+  if (r != e) {
+    cout << "Failed." << endl;
+    return 1;
+  }
+  cout << "Passed!" << endl;
+  return 0;
+}
+
+//Test rotations where de = 0
+int Simulation::rot_no_change() {
+  int failed = 0;
+
+  cout << "No change rotation (matching, central): ";
+  failed += testChange(rotChange(array[5], array[5]->getOr()), 0.0);
+
+  cout << "No change rotation (matching, boundary): ";
+  failed += testChange(rotChange(array[1], array[1]->getOr()), 0.0);
+
+  cout << "No change rotation (non-matching, central): ";
+  failed += testChange(rotChange(array[10], array[10]->getOr()), 0.0);
+
+  cout << "No change rotation (non-matching, boundary): ";
+  failed += testChange(rotChange(array[7], array[7]->getOr()), 0.0);
+
+  cout << "No change rotation (mixed, boundary): ";
+  failed += testChange(rotChange(array[15], array[15]->getOr()), 0.0);
+
+  return failed;
+}
+
+//Test rotations where de < 0
+int Simulation::rot_good_change() {
+  return 0;
+}
+
+//Test rotations where de > 0
+int Simulation::rot_bad_change() {
+  return 0;
+}
+
+//Test swaps where de = 0
+int Simulation::swap_no_change() {
+  return 0;
+}
+
+//Test swaps where de < 0
+int Simulation::swap_good_change() {
+  return 0;
+}
+
+//Test swaps where de > 0
+int Simulation::swap_bad_change() {
+  return 0;
+}
+
+//Test neighbor swaps where de = 0
+int Simulation::swap_nn_no_change() {
+  return 0;
+}
+
+//Test neighbor swaps where de < 0
+int Simulation::swap_nn_good_change() {
+  return 0;
+}
+
+//Test neighbor swaps where de > 0
+int Simulation::swap_nn_bad_change() {
+  return 0;
 }
