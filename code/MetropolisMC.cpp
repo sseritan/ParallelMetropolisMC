@@ -1,32 +1,22 @@
 //
-//
-// Originally written by Stefan Seritan on 8/28/14
-// Modified by Stefan Seritan and Wei Dai for CS 140 Final Project Winter 2015
+// Originally written by Stefan Seritan for the Peters Group at UCSB
+// Rewritten by Stefan Seritan and Wei Dai on 03/07/15
 //
 // Originally a sequential Metropolis Monte Carlo simulation
-// Parallelized for CS 140 Final Project
+// Parallelized for CS 140 Winter 2015 Final Project
 //
 
-
-/***************************************************/
-/*        HYBRID POTTS-LATTICE GAS MODEL           */
-/***************************************************/
 
 //I/O includes
 #include <iostream>
-//Array include
-#include <array>
 //Stdlib include for atoi, atof
 #include <cstdlib>
-//Math include
-#include <cmath>
 //Time include
 #include <chrono>
 #include <ctime>
 
 //Local include
 #include "./MetropolisMC.hpp"
-//#include "./subroutine.cpp"
 #include "./Simulation.hpp"
 
 using namespace std;
@@ -38,14 +28,7 @@ int main(int argc, char* argv[]) {
   int runType, x, y, z, eqSweeps, dataSweeps;
   double kT, compA, cutoff;
   if (argc != 9) {
-    cout << "Usage:\n./MetropolisMC <kT> <x> <y> <z> <Eq. Sweeps> <Data Sweeps> <CompA> <Cutoff>" << endl;
-    cout << "Temp is kT. Acceptance is based on exp(-energy/kT). Higher kT basically allows less favored moves still get accepted, equivalent to higher temperature." << endl;
-    cout << "x, y, and z are the sizes of the 3D lattice." << endl;
-    cout << "Eq. Sweeps is the number of sweeps to reach equilibrium (no data collected). Equilibrium reached when energy doesn't change." << endl;
-    cout << "Data. Sweeps is the number of sweeps where we collect energy and phase data between sweeps. More data sweeps, the better the collected statistics (weak law of large numbers)." << endl;
-    cout << "CompA is a number between 0 and 1 that sets an initial fraction of the identities to 1 (species A)." << endl;
-    cout << "Cutoff is the number we use to separate phases. Theta values above cutoff are one phase, values below are the other phase.\n"
-     "For the symmetric Hamiltonian, it should be the same value as CompA." << endl;
+    cout << "Usage:\n./MC <kT> <x> <y> <z> <Eq. Sweeps> <Data Sweeps> <CompA> <Cutoff>" << endl;
     exit(1);
   } else {
     //Parse arguments
@@ -60,104 +43,71 @@ int main(int argc, char* argv[]) {
   }
 
   //Print out simulation information
-  cout << "SIMULATION DETAILS" << endl;
   auto start_time = chrono::system_clock::to_time_t(chrono::system_clock::now());
   cout << "Started simulation on " << ctime(&start_time) << endl;
-  cout << "Temperature: " << kT << endl;
+  cout << "SIMULATION DETAILS" << endl;
   cout << "Hamiltonian: K=" << K << " A=" << A << endl;
   cout << "Move probabilities: Rotation=" << ROTATION << " Particle Swap=" << PARTSWAP << endl;
   cout << "Sweep information: Equilibration=" << eqSweeps << " Data Gathering=" << dataSweeps << endl;
-  cout << "Using Theta cutoff value of " << cutoff << endl;
 
-  Simulation* sim = new Simulation(x, y, z, compA);
-  delete sim;
-  /*
-  //Initialize random number generator
-  auto seed = chrono::high_resolution_clock::now().time_since_epoch().count();
-  cout << "Using seed " << seed << " for srand()." << endl;
-  srand(seed);
+  Simulation* sim = new Simulation(x, y, z, kT, compA, cutoff);
 
-  //Initialize identity and orientation arrays
-  SimArray<int>* X_ptr = new SimArray<int>;
-  SimArray<int>* S_ptr = new SimArray<int>;
+  //Run equilibration sweeps
+  for (int t = 1; t <= eqSweeps; t++) {
+    sim->doSweep();
 
-  for(int i=0; i<Lx; i++) {
-    for(int j=0; j<Ly; j++) {
-      for(int k=0; k<Lz; k++) {
-        //Seed identity so that target composition is met
-        (*X_ptr)[i][j][k] = ((k<compA*Lz) ? 1 : 2);
-        //Uniform orientation
-        (*S_ptr)[i][j][k] = 1;
-      }
-    }
-  }
-
-  //Get initial energy of the system
-  double e = energy(*X_ptr, *S_ptr)/kT;
-  cout << "\nInitial energy (E/kT): " << e << endl;
-
-  //Run through equilibration sweeps
-  for (int t=1; t <= eqSweeps; t++) {
-    //Run one full sweep
-    sweep(*X_ptr, *S_ptr, e, kT);
-
-    //Print out equilibration data
-    if (t%100 == 0) {
+    if (eqSweeps >= 10 && t%(eqSweeps/10) == 0) {
       cout << "Equilibration sweep " << t << "/" << eqSweeps;
-
-      //Print energy (updated and fresh)
-      cout << " E/kT(updated)=" << e << endl;
+      cout << " E/kT=" << sim->getEnergy() << endl;
     }
   }
 
-  //Initialize data collection variables
-  //MeltingTemp variable
+  //Calculate Theta histogram just to make sure cutoff value is ok
+  sim->updateTheta();
+  double* histogram = sim->calcThetaHistogram();
+  cout << "Theta Histogram:" << endl;
+  for (int i = 0; i < 100; i++) {
+    cout << "0: " << histogram[i] << " ";
+    if (i%10 == 0) cout << endl;
+  }
+  cout << endl;
+
+  //Data collection variables
   double eAvg;
-  //Phase Diagram run variable
-  array<double, 2> XA;
+  double X1 [2];
 
-  //Run through data sweeps (collecting data every sweep)
-  cout << "*********************\nBeginning data sweeps\n*********************" << endl;
   for (int t = 1; t <= dataSweeps; t++) {
-    //Run one full sweep
-    sweep(*X_ptr, *S_ptr, e, kT);
+    sim->doSweep();
 
-    //Calculate Theta
-    SimArray<double> Theta = phase_parameter(*X_ptr);
-
-    //Calculate phase compositions from Theta and cutoff value
-    array<double, 2> XANew = phase_data(*X_ptr, Theta, cutoff);
+    //Update Theta and calculate phase compositions from Theta and cutoff
+    sim->updateTheta();
+    double* X1New = sim->calcX1();
 
     if (t == 1) {
       //Initialize data
-      eAvg = e;
-      XA = XANew;
+      eAvg = sim->getEnergy();
+      X1[0] = X1New[0]; X1[1] = X1New[1];
     } else {
-      //Keep running avg of data
-      eAvg = (eAvg*(t-1) + e)/(double)t;
-      for (int i = 0; i < 2; i++) {
-        XA[i] = (XA[i]*(t-1) + XANew[i])/(double)t;
-      }
+      //Keep running averages
+      eAvg = (eAvg*(t-1) + sim->getEnergy())/(double)t;
+      X1[0] = (X1[0]*(t-1) + X1New[0])/(double)t;
+      X1[1] = (X1[1]*(t-1) + X1New[1])/(double)t;
     }
 
-    //Print snapshots every 10000 sweeps, just to see what's up
-    if (t%10000 == 0) {
-      cout << "Printing VMD snapshot at " << t << " data sweeps." << endl;
-      print_VMD_snapshot(*X_ptr, *S_ptr, t);
+    if (dataSweeps >= 10 && t%(dataSweeps/10) == 0) {
+      cout << "Data sweep " << t << "/" << dataSweeps << endl;
     }
   }
 
-  //Print out information collected in data sweeps
+  //Print collected data
   cout << "Average energy (E/kT): " << eAvg << endl;
-  cout << "XA (A-rich): " << XA[0] << " XA (B-rich):" << XA[1] << endl;
+  cout << "X1 (1-rich):" << X1[0] << " X1 (2-rich) " << X1[1] << endl;
 
   auto end_time = chrono::system_clock::to_time_t(chrono::system_clock::now());
   cout << "\nFinished simulation on " << ctime(&end_time) << endl;
 
   //Memory Management
-  delete X_ptr; delete S_ptr;
-  
-  */
+  delete sim;
 
   //Exit successfully
   return 0;

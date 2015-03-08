@@ -70,42 +70,6 @@ void sweep(SimArray<int>& X, SimArray<int>& S, double& e, const double kT) {
   }
 }
 
-//Calculate energy of full box
-double energy(const SimArray<int>& X, const SimArray<int>& S) {
-  double e = 0.0;
-
-  //Iterate through box (with periodic boundaries)
-  for(int i=0; i<Lx; i++) {
-    int ii = mod(i+1, Lx);
-    for(int j=0; j<Ly; j++) {
-      int jj = mod(j+1, Ly);
-      for(int k=0; k<Lz; k++) {
-        int kk = mod(k+1, Lz);
-
-        //Calculate pairwise energy (forward in each direction)
-        e += pairwise_energy(X[i][j][k], X[ii][j][k], S[i][j][k], S[ii][j][k]);
-        e += pairwise_energy(X[i][j][k], X[i][jj][k], S[i][j][k], S[i][jj][k]);
-        e += pairwise_energy(X[i][j][k], X[i][j][kk], S[i][j][k], S[i][j][kk]);
-      }
-    }
-  }
-
-  return e;
-}
-
-//Calculate the energy between two particles (e = -K dm(i)m(j) -A ds(i)s(j)
-double pairwise_energy(int m1, int m2, int s1, int s2) {
-  double e = 0.0;
-
-  //Identity bonus
-  if (m1 == m2) e += -K;
-
-  //Orientation bonus
-  if (s1 == s2) e += -A;
-
-  return e;
-}
-
 //Calculate the energy with nearest neighbors at point (i,j,k)
 double point_energy(const SimArray<int>& X, const SimArray<int>& S, int i, int j, int k) {
   //Calculate each pairwise energy
