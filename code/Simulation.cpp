@@ -80,30 +80,128 @@ double Cell::pointEnergy(int i, int o) {
   return e;
 }
 
+//Initialize theta (M=6) for a lattice position
+//From V. Argawal and B. Peters, J. Chem. Phys. 140, 084111
+void Cell::thetaInit() {
+  theta = 0.5;
+
+  //Run through neighbors
+  if (id == im->id) {
+    theta += 1.0/12.0;
+  }
+  if (id == ip->id) {
+    theta += 1.0/12.0;
+  }
+  if (id == jm->id) {
+    theta += 1.0/12.0;
+  }
+  if (id == jp->id) {
+    theta += 1.0/12.0;
+  }
+  if (id == km->id) {
+    theta += 1.0/12.0;
+  }
+  if (id == kp->id) {
+    theta += 1.0/12.0;
+  }
+
+  //If id = 2, we actually wanted to flip it towards 0
+  if (id == 2) {
+    theta = 1.0 - theta;
+  }
+}
+
+//Average thetas into Theta (M=7) for a lattice position
+//From V. Argawal and B. Peters, J. Chem. Phys. 140, 084111
+double Cell::calcTheta() {
+  //Sum thetas
+  double Theta = theta;
+  Theta += im->theta;
+  Theta += ip->theta;
+  Theta += jm->theta;
+  Theta += jp->theta;
+  Theta += km->theta;
+  Theta += kp->theta;
+
+  //Average out Theta
+  return Theta/7.0;
+}
+
+//Checks to see if a Cell is a neighbor
+int Cell::isNeighbor(Cell* c) {
+  if (im == c || ip == c || jm == c || jp == c || km == c || km == c) {
+    return 1;
+  }
+
+  return 0;
+}
+
+//Swaps the identity and orientation of two cells
+//This is cheaper than changing pointers and rearranging neighbor connections
+void Cell::swapIdOr(Cell* c) {
+  //Save my info
+  int tempId = id, tempOr = orient;
+
+  //Pull c's info
+  id = c->id; orient = c->orient;
+
+  //Put my info into c
+  c->id = tempId; c->orient = tempOr;
+
+  return;
+}
+
 /******************************
  * Simulation PRIVATE FUNCTIONS
  ******************************/
 //Periodic boundary checking function
-int Simulation::mod(int n, int k) {
+int Simulation::mod(int n) {
   while (n < 0) {
-    n += k;
+    n += NMAX;
   }
-  while (n >= k) {
-    n -= k;
+  while (n >= NMAX) {
+    n -= NMAX;
   }
 
   return n;
 }
 
-//TODO
-double Simulation::rotChange(int i, int j, int k, int q) {
-  return 0.0;
+//Calculate the energy change for a rotation move
+double Simulation::rotChange(Cell* c, int q) {
+  //Calculate current energy
+  double e1 = c->pointEnergy(-1, -1);
+
+  //Calculate fake energy
+  double e2 = c->pointEnergy(-1, q);
+
+  return (e2 - e1);
 }
 
-//TODO
-double Simulation::swapChange(int i, int j, int k, int ii, int jj, int kk) {
-  return 0.0;
+//Calculate the energy change for a swap move
+double Simulation::swapChange(Cell* c1, Cell* c2) {
+  //Calculate current energy
+  double e1 = c1->pointEnergy(-1, -1) + c2->pointEnergy(-1, -1);
+
+  int i1 = c1->getId(), i2 = c2->getId();
+  int o1 = c1->getOr(), o2 = c2->getOr();
+
+  //Calculate the fake energy when accepted
+  double e2 = c1->pointEnergy(i2, o2) + c2->pointEnergy(i1, o1);
+
+  //If the two are neighbors and are diff id or orient, need to subtract an overcount
+  if (c1->isNeighbor(c2)) {
+    if (i1 != i2) {
+      e2 += 2*K;
+    }
+    if (o1 != o2) {
+      e2 += 2*A;
+    }
+  }
+
+  return (e2 - e1);
 }
+
+
 
 /*****************************
  * Simulation PUBLIC FUNCTIONS
@@ -112,6 +210,7 @@ double Simulation::swapChange(int i, int j, int k, int ii, int jj, int kk) {
 //Constructor
 Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
   Lx = x; Ly = y; Lz = z;
+  NMAX = Lx*Ly*Lz;
   kT = T;
   cutoff = c;
   cout << "\nINPUT DETAILS" << endl;
@@ -119,12 +218,11 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
   cout << "Temperature (kT) of " << kT << endl;
 
   //Allocate array of Cells
-  int nmax = Lx*Ly*Lz;
-  array = new Cell* [nmax];
+  array = new Cell* [NMAX];
 
   //Initialize cells
-  int threshold = compA*nmax;
-  cout << "Simulation seeded with " << threshold << "/" << nmax << " particles of species 1" << endl;
+  int threshold = compA*NMAX;
+  cout << "Simulation seeded with " << threshold << "/" << NMAX << " particles of species 1" << endl;
   cout << "Using Theta cutoff value of " << cutoff << endl;
 
   //Set species 1
@@ -132,18 +230,22 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
     array[i] = new Cell(1, 1);
   }
   //Set species 2
-  for (int i = threshold; i < Lx*Ly*Lz; i++) {
+  for (int i = threshold; i < NMAX; i++) {
     array[i] = new Cell(2, 1);
   }
 
-  //Link array
-  for (int i = 0; i < nmax; i++) {
-    array[i]->setIm(array[mod(i-1, nmax)]);
-    array[i]->setIp(array[mod(i+1, nmax)]);
-    array[i]->setJm(array[mod(i-Lx, nmax)]);
-    array[i]->setJp(array[mod(i+Lx, nmax)]);
-    array[i]->setKm(array[mod(i-Lx*Ly, nmax)]);
-    array[i]->setKp(array[mod(i+Lx*Ly, nmax)]);
+  //Secondary cell initialization
+  for (int i = 0; i < NMAX; i++) {
+    //Link cell with neighbors
+    array[i]->setIm(array[mod(i-1)]);
+    array[i]->setIp(array[mod(i+1)]);
+    array[i]->setJm(array[mod(i-Lx)]);
+    array[i]->setJp(array[mod(i+Lx)]);
+    array[i]->setKm(array[mod(i-Lx*Ly)]);
+    array[i]->setKp(array[mod(i+Lx*Ly)]);
+
+    //Initialize theta
+    array[i]->thetaInit();
   }
 
   //Initialize random number generation
@@ -153,7 +255,7 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
 
   //Initialize energy of the system
   energy = 0.0;
-  for (int i = 0; i < nmax; i++) {
+  for (int i = 0; i < NMAX; i++) {
     //Calculate pairwise energy with forward pairs in each direction
     energy += array[i]->pairEnergy(-1, -1, 2); //In forward i direction
     energy += array[i]->pairEnergy(-1, -1, 4); //In forward j direction
@@ -167,7 +269,7 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
 //Destructor
 Simulation::~Simulation() {
   //Memory Management
-  for (int i = 0; i < Lx*Ly*Lz; i++) {
+  for (int i = 0; i < NMAX; i++) {
     delete array[i];
   }
   delete[] array;
@@ -175,24 +277,21 @@ Simulation::~Simulation() {
 
 //Function to evolve simulation by one sweep
 void Simulation::doSweep() {
-  for (int t = 1; t <= Lx*Ly*Lz; t++) {
+  for (int t = 1; t <= NMAX; t++) {
     double m = (double)rand()/(double)RAND_MAX;
     if (m < ROTATION) {
       //Rotation move
-      int i = rand()%Lx;
-      int j = rand()%Ly;
-      int k = rand()%Lz;
+      //Pick a random location
+      int index = rand()%(NMAX);
 
       //Pick random orientation
       int q = rand()%6 + 1;
 
       //Calculate energy change associated with rotation
-      double de = rotChange(i, j, k, q)/kT;
+      double de = rotChange(array[index], q)/kT;
 
+      //Check acceptance
       if ((double)rand()/(double)RAND_MAX < exp(-de)) {
-        //Accept move
-        int index = i + Lx*j + Lx*Ly*k;
-
         //Update orientation and history
         array[index]->setOr(q);
         array[index]->pushUpdate(t);
@@ -202,22 +301,16 @@ void Simulation::doSweep() {
       }
     } else {
       //Particle swap move
-      int i = rand()%Lx; int ii = rand()%Lx;
-      int j = rand()%Ly; int jj = rand()%Ly;
-      int k = rand()%Lz; int kk = rand()%Lz;
+      int index1 = rand()%(NMAX);
+      int index2 = rand()%(NMAX);
 
       //Calculate energy change associated with swap
-      double de = swapChange(i, j, k, ii, jj, kk)/kT;
+      double de = swapChange(array[index1], array[index2])/kT;
 
       //Check acceptance
       if ((double)rand()/(double)RAND_MAX < exp(-de)) {
-        int index1 = i + Lx*j + Lx*Ly*k;
-        int index2 = ii + Lx*jj + Lx*Ly*kk;
-
-        //Swap cell pointers
-        Cell* temp = array[index1];
-        array[index1] = array[index2];
-        array[index2] = temp;
+        //Swap cells
+        array[index1]->swapIdOr(array[index2]);
 
         //Update history
         array[index1]->pushUpdate(t);
@@ -235,16 +328,53 @@ double Simulation::getEnergy() {
   return energy;
 }
 
-void Simulation::updateTheta() {
-  //TODO
-}
-
 double* Simulation::calcThetaHistogram() {
-  //TODO
-  return NULL;
+  //Initialize histogram
+  double* h = new double [100];
+  for (int i = 0; i < 100; i++) {
+    h[i] = 0.0;
+  }
+
+  for (int i = 0; i < NMAX; i++) {
+    //Calculate Theta
+    double Theta = array[i]->calcTheta();
+
+    //Get index in histogram (if Theta = 1.00, still in bin 99)
+    int index = (floorf(Theta*100) <= 99 ? : 99);
+
+    h[index] += 1;
+  }
+
+  return h;
 }
 
 double* Simulation::calcX1() {
-  //TODO
-  return NULL;
+  int n [2] = {0, 0}; //Number of particles in each phase
+  int n1 [2] = {0, 0}; // Number of species i in each phase
+
+  for (int i = 0; i < NMAX; i++) {
+    //Calculate Theta
+    double Theta = array[i]->calcTheta();
+
+    //Decide if in 1-rich or 2-rich phase
+    if (Theta >= cutoff) {
+      n[0]++;
+      if (array[i]->getId() == 1) {
+        n1[0]++;
+      }
+    } else {
+      n[1]++;
+      if (array[i]->getId() == 1) {
+        n1[1]++;
+      }
+    }
+  }
+
+  //Calculate mole fraction from n1/n for each phase
+  double* X1 = new double [2];
+  for (int i = 0; i < 2; i++) {
+    X1[i] = (double)n1[i]/(double)n[i];
+  }
+
+  return X1;
 }

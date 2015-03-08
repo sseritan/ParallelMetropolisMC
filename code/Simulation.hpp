@@ -18,6 +18,7 @@ class Cell {
     Cell* im; Cell* ip; //Neighbors in the i direction
     Cell* jm; Cell* jp; //Neighbors in the j direction
     Cell* km; Cell* kp; //Neighbors in the k direction
+    double theta; //Local value of theta
 
   public:
     Cell(int i, int o);
@@ -44,23 +45,29 @@ class Cell {
     //Energy functions
     double pairEnergy(int i, int o, int q);
     double pointEnergy(int i, int o);
+    //Data functions
+    void thetaInit();
+    double calcTheta();
+    //Utility functions
+    int isNeighbor(Cell* c);
+    void swapIdOr(Cell* c);
 };
 
 //Simulation
 class Simulation {
     int Lx, Ly, Lz; //3D Lattice dimensions
+    int NMAX;
     double kT; //Temperature
     double energy; //Energy (continuously updated)
     double cutoff; //Theta cutoff value for phase separation
 
     Cell** array; //1D array of Cell*
-    double* Theta; //Theta parameter
     //std::atomic_flag* flags; //Array of flags (have atomic test and set)
 
     //Private functions
-    int mod(int n, int k);
-    double rotChange(int i, int j, int k, int q);
-    double swapChange(int i, int j, int k, int ii, int jj, int kk);
+    int mod(int n);
+    double rotChange(Cell* c, int q);
+    double swapChange(Cell* c1, Cell* c2);
   public:
     //Constructor
     Simulation(int x, int y, int z, double T, double compA, double c);
@@ -70,7 +77,6 @@ class Simulation {
     void doSweep();
     //Data functions
     double getEnergy();
-    void updateTheta();
     double* calcThetaHistogram();
     double* calcX1();
 };
