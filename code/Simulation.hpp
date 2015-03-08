@@ -45,9 +45,6 @@ class Cell {
     //Energy functions
     double pairEnergy(int i, int o, int q);
     double pointEnergy(int i, int o);
-    //Data functions
-    void thetaInit();
-    double calcTheta();
     //Utility functions
     int isNeighbor(Cell* c);
     void swapIdOr(Cell* c);
@@ -65,9 +62,12 @@ class Simulation {
     //std::atomic_flag* flags; //Array of flags (have atomic test and set)
 
     //Private functions
-    int mod(int n);
+    int wrap1d(int coord, int dir, int step);
+    int wrap3d(int index, int dir, int step);
     double rotChange(Cell* c, int q);
     double swapChange(Cell* c1, Cell* c2);
+    double* calctheta();
+    double* calcTheta();
   public:
     //Constructor
     Simulation(int x, int y, int z, double T, double compA, double c);

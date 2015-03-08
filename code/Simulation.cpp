@@ -80,53 +80,6 @@ double Cell::pointEnergy(int i, int o) {
   return e;
 }
 
-//Initialize theta (M=6) for a lattice position
-//From V. Argawal and B. Peters, J. Chem. Phys. 140, 084111
-void Cell::thetaInit() {
-  theta = 0.5;
-
-  //Run through neighbors
-  if (id == im->id) {
-    theta += 1.0/12.0;
-  }
-  if (id == ip->id) {
-    theta += 1.0/12.0;
-  }
-  if (id == jm->id) {
-    theta += 1.0/12.0;
-  }
-  if (id == jp->id) {
-    theta += 1.0/12.0;
-  }
-  if (id == km->id) {
-    theta += 1.0/12.0;
-  }
-  if (id == kp->id) {
-    theta += 1.0/12.0;
-  }
-
-  //If id = 2, we actually wanted to flip it towards 0
-  if (id == 2) {
-    theta = 1.0 - theta;
-  }
-}
-
-//Average thetas into Theta (M=7) for a lattice position
-//From V. Argawal and B. Peters, J. Chem. Phys. 140, 084111
-double Cell::calcTheta() {
-  //Sum thetas
-  double Theta = theta;
-  Theta += im->theta;
-  Theta += ip->theta;
-  Theta += jm->theta;
-  Theta += jp->theta;
-  Theta += km->theta;
-  Theta += kp->theta;
-
-  //Average out Theta
-  return Theta/7.0;
-}
-
 //Checks to see if a Cell is a neighbor
 int Cell::isNeighbor(Cell* c) {
   if (im == c || ip == c || jm == c || jp == c || km == c || km == c) {
@@ -154,16 +107,49 @@ void Cell::swapIdOr(Cell* c) {
 /******************************
  * Simulation PRIVATE FUNCTIONS
  ******************************/
-//Periodic boundary checking function
-int Simulation::mod(int n) {
-  while (n < 0) {
-    n += NMAX;
-  }
-  while (n >= NMAX) {
-    n -= NMAX;
+//1D periodic boundary condition
+int Simulation::wrap1d(int coord, int dir, int step) {
+  coord += step;
+
+  switch(dir) {
+    case 0:
+      if (coord < 0) coord += Lx;
+      if (coord >= Lx) coord -= Lx;
+      break;
+    case 1:
+      if (coord < 0) coord += Ly;
+      if (coord >= Ly) coord -= Ly;
+      break;
+    case 2:
+      if (coord < 0) coord += Lz;
+      if (coord >= Lz) coord -= Lz;
+      break;
   }
 
-  return n;
+  return coord;
+}
+//Periodic boundary checking function
+int Simulation::wrap3d(int index, int dir, int step) {
+  //Convert index to 3D coords
+  int k = index/(Lx*Ly); //Which slice
+  int j = (index%(Lx*Ly))/Lx; //Which row on the slice
+  int i = (index%(Lx*Ly))%Lx; //Which element in the row on the slice
+
+  //Direction: 0 is i, 1 is j, 2 is k
+  switch (dir) {
+    case 0:
+      wrap1d(i, dir, step);
+      break;
+    case 1:
+      wrap1d(j, dir, step);
+      break;
+    case 2:
+      wrap1d(k, dir, step);
+      break;
+  }
+
+  //Revert back to index
+  return i + Lx*j + Lx*Ly*k;
 }
 
 //Calculate the energy change for a rotation move
@@ -185,7 +171,7 @@ double Simulation::swapChange(Cell* c1, Cell* c2) {
   int i1 = c1->getId(), i2 = c2->getId();
   int o1 = c1->getOr(), o2 = c2->getOr();
 
-  //Calculate the fake energy when accepted
+  //Calculate the fake energy of if move accepted
   double e2 = c1->pointEnergy(i2, o2) + c2->pointEnergy(i1, o1);
 
   //If the two are neighbors and are diff id or orient, need to subtract an overcount
@@ -201,7 +187,80 @@ double Simulation::swapChange(Cell* c1, Cell* c2) {
   return (e2 - e1);
 }
 
+//Calculate theta (M=26)
+//From V. Argawal and B. Peters, J. Chem. Phys. 140, 084111
+double* Simulation::calctheta() {
+  //Initialize
+  double* theta = new double [NMAX];
 
+  //Run through and calculate for every lattice position
+  for (int i = 0; i < NMAX; i++) {
+    theta[i] = 0.5;
+
+    //Split into 3D coords
+    int x = (i%(Lx*Ly))%Lx;
+    int y = (i%(Lx*Ly))/Lx;
+    int z = i/(Lx*Ly);
+
+    //Run through neighbors (3x3x3 cube)
+    int id = array[i]->getId();
+    for (int a = -1; a < 2; a++) {
+      for (int b = -1; b < 2; b++) {
+        for (int c = -1; c < 2; c++) {
+          if (id == array[wrap1d(x, 0, a) + wrap1d(y, 1, b)*Lx + wrap1d(z, 2, c)*Lx*Ly]->getId()) {
+            theta[i] += 1.0/52.0;
+          }
+        }
+      }
+    }
+
+    //Remove overcount
+    theta[i] -= 1.0/52.0;
+
+    //If id = 2, we really wanted + to be -
+    if (id == 2) {
+      theta[i] = 1.0 - theta[i];
+    }
+  }
+
+  return theta;
+}
+
+//Calculate Theta (M=26)
+//From V. Argawal and B. Peters, J. Chem. Phys. 140, 084111
+double* Simulation::calcTheta() {
+  //Initialize
+  double* Theta = new double [NMAX];
+
+  //Get theta
+  double* theta = calctheta();
+
+  for (int i = 0; i < NMAX; i++) {
+    Theta[i] = 0.0;
+
+    //Split into 3D coords
+    int x = (i%(Lx*Ly))%Lx;
+    int y = (i%(Lx*Ly))/Lx;
+    int z = i/(Lx*Ly);
+
+    //Run through neighbors
+    for (int a = -1; a < 2; a++) {
+      for (int b = -1; b < 2; b++) {
+        for (int c = -1; c < 2; c++) {
+          Theta[i] += theta[wrap1d(x, 0, a) + wrap1d(y, 1, b)*Lx + wrap1d(z, 2, c)*Lx*Ly];
+        }
+      }
+    }
+
+    //Average out Theta
+    Theta[i] /= 27.0;
+  }
+
+  //Memory Management
+  delete[] theta;
+
+  return Theta;
+}
 
 /*****************************
  * Simulation PUBLIC FUNCTIONS
@@ -237,16 +296,14 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
   //Secondary cell initialization
   for (int i = 0; i < NMAX; i++) {
     //Link cell with neighbors
-    array[i]->setIm(array[mod(i-1)]);
-    array[i]->setIp(array[mod(i+1)]);
-    array[i]->setJm(array[mod(i-Lx)]);
-    array[i]->setJp(array[mod(i+Lx)]);
-    array[i]->setKm(array[mod(i-Lx*Ly)]);
-    array[i]->setKp(array[mod(i+Lx*Ly)]);
-
-    //Initialize theta
-    array[i]->thetaInit();
+    array[i]->setIm(array[wrap3d(i, 0, -1)]);
+    array[i]->setIp(array[wrap3d(i, 0, 1)]);
+    array[i]->setJm(array[wrap3d(i, 1, -1)]);
+    array[i]->setJp(array[wrap3d(i, 1, 1)]);
+    array[i]->setKm(array[wrap3d(i, 2, -1)]);
+    array[i]->setKp(array[wrap3d(i, 2, 1)]);
   }
+
 
   //Initialize random number generation
   auto seed = chrono::high_resolution_clock::now().time_since_epoch().count();
@@ -335,15 +392,24 @@ double* Simulation::calcThetaHistogram() {
     h[i] = 0.0;
   }
 
-  for (int i = 0; i < NMAX; i++) {
-    //Calculate Theta
-    double Theta = array[i]->calcTheta();
+  double* Theta = calcTheta();
 
+  for (int i = 0; i < NMAX; i++) {
     //Get index in histogram (if Theta = 1.00, still in bin 99)
-    int index = (floorf(Theta*100) <= 99 ? : 99);
+    int index = floorf(Theta[i]*100);
+    if (index < 0) index = 0;
+    if (index > 99) index = 99;
 
     h[index] += 1;
   }
+
+  //Normalize
+  for (int i = 0; i < 100; i++) {
+    h[i] /= NMAX;
+  }
+
+  //Memory Management
+  delete[] Theta;
 
   return h;
 }
@@ -352,12 +418,11 @@ double* Simulation::calcX1() {
   int n [2] = {0, 0}; //Number of particles in each phase
   int n1 [2] = {0, 0}; // Number of species i in each phase
 
-  for (int i = 0; i < NMAX; i++) {
-    //Calculate Theta
-    double Theta = array[i]->calcTheta();
+  double* Theta = calcTheta();
 
+  for (int i = 0; i < NMAX; i++) {
     //Decide if in 1-rich or 2-rich phase
-    if (Theta >= cutoff) {
+    if (Theta[i] >= cutoff) {
       n[0]++;
       if (array[i]->getId() == 1) {
         n1[0]++;
@@ -369,6 +434,9 @@ double* Simulation::calcX1() {
       }
     }
   }
+
+  //Memory Management
+  delete[] Theta;
 
   //Calculate mole fraction from n1/n for each phase
   double* X1 = new double [2];

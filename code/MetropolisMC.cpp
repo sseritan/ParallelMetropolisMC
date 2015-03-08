@@ -77,8 +77,8 @@ int main(int argc, char* argv[]) {
   double* histogram = sim->calcThetaHistogram();
   cout << "Theta Histogram:" << endl;
   for (int i = 0; i < 100; i++) {
-    cout << "0: " << histogram[i] << " ";
-    if (i%10 == 0) cout << endl;
+    cout << i << ": " << histogram[i] << " ";
+    if (i > 0 && i%9 == 0) cout << endl;
   }
   cout << endl;
 
@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
 
   //Print collected data
   cout << "Average energy (E/kT): " << eAvg << endl;
-  cout << "X1 (1-rich):" << X1[0] << " X1 (2-rich) " << X1[1] << endl;
+  cout << "X1 (1-rich): " << X1[0] << " X1 (2-rich) " << X1[1] << endl;
 
   cout << "\nInitialization time (ms): " << initDuration.count() << endl;
   cout << "Equilibrium time (ms): " << eqDuration.count() << endl;
