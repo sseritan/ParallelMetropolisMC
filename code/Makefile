@@ -8,4 +8,4 @@ test: test.cpp Simulation.hpp Simulation.cpp SimTest.cpp SimTest.hpp
 	$(CC) $(CFLAGS) test.cpp SimTest.cpp Simulation.cpp -o test
 
 clean:
-	rm MC test
+	rm -f MC test

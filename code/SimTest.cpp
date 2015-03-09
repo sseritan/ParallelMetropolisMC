@@ -224,7 +224,13 @@ int SimTest::swap_nn_no_change() {
 
 //Test neighbor swaps where de < 0
 int SimTest::swap_nn_good_change() {
-  return 0;
+  int failed = 0;
+
+  //(1, 1, 2) with (1, 2, 2) 2 in mostly 1s <-> 1 in mostly 2s (break 2+0, make 5+3 ((8-2)*-1.5 = -9))
+  cout << "Good change nn swap (2 in some 1s <-> 1 in some 2s, central): ";
+  failed += testChange(swapChange(array[37], array[41]), -9.0);
+
+  return failed;
 }
 
 //Test neighbor swaps where de > 0
@@ -232,7 +238,7 @@ int SimTest::swap_nn_bad_change() {
   int failed = 0;
 
   //(0, 3, 0) with (1, 3, 0) 2 in mixed <-> 1 in mostly 1s (break 3+5, make 0+3 ((3-8)*-1.5 = 7.5))
-  cout << "Bad change nn swap (boundary): ";
+  cout << "Bad change nn swap (2 in mixed <-> 1 in some 1s, boundary): ";
   failed += testChange(swapChange(array[12], array[13]), 7.5);
 
   return failed;
