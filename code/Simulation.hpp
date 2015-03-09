@@ -72,6 +72,9 @@ class Simulation {
     double swapChange(Cell* c1, Cell* c2);
     double* calctheta();
     double* calcTheta();
+
+    //Friend for testing
+    friend class SimTest;
   public:
     //Constructor
     Simulation(int x, int y, int z, double T, double compA, double c);
@@ -83,23 +86,6 @@ class Simulation {
     double getEnergy();
     double* calcThetaHistogram();
     double* calcX1();
-
-    //TESTING FUNCTIONS
-    //Test constructor (predetermined 4x4x4)
-    Simulation(int dummy);
-    //Test helper function
-    int testChange(double r, double e);
-    //Rotation tests
-    int rot_no_change();
-    int rot_good_change();
-    int rot_bad_change();
-    //Swap tests
-    int swap_no_change();
-    int swap_good_change();
-    int swap_bad_change();
-    int swap_nn_no_change();
-    int swap_nn_good_change();
-    int swap_nn_bad_change();
 };
 
 #endif

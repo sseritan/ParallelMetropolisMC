@@ -5,37 +5,35 @@
 
 #include <iostream>
 
-//Testing hack to have access to change functions
-#define private public
-
 #include "./MetropolisMC.hpp"
 #include "./Simulation.hpp"
+#include "./SimTest.hpp"
 
 using namespace std;
 
 int main() {
   //Initialize my own special mini simulation (5x5x5)
-  Simulation* sim = new Simulation(-1);
+  SimTest* st = new SimTest();
 
   int failed = 0;
 
   //Test rotChange
   cout << "ROTATION TESTS:" << endl;
-  failed += sim->rot_no_change();
-  failed += sim->rot_good_change();
-  failed += sim->rot_bad_change();
+  failed += st->rot_no_change();
+  failed += st->rot_good_change();
+  failed += st->rot_bad_change();
 
   //Test swapChange
   cout << "SWAP TESTS:" << endl;
-  failed += sim->swap_no_change();
-  failed += sim->swap_good_change();
-  failed +=sim->swap_bad_change();
+  failed += st->swap_no_change();
+  failed += st->swap_good_change();
+  failed +=st->swap_bad_change();
 
   //Test neighbor swap in swapChange (tricky cases)
   cout << "SWAP NEIGHBORS TESTS:" << endl;
-  failed += sim->swap_nn_no_change();
-  failed += sim->swap_nn_good_change();
-  failed += sim->swap_nn_bad_change();
+  failed += st->swap_nn_no_change();
+  failed += st->swap_nn_good_change();
+  failed += st->swap_nn_bad_change();
 
   if (failed) {
     cout << "\nFailed " << failed << " tests. :(" << endl;
@@ -44,5 +42,5 @@ int main() {
   }
 
   //Memory Management
-  delete sim;
+  delete st;
 }
