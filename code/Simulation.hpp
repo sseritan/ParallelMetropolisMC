@@ -15,10 +15,6 @@
 class Cell {
     int id, orient; //Identity and orientation
     std::vector<int> updateHistory; //Array of ints to keep track of which moves update the cell
-    Cell* im; Cell* ip; //Neighbors in the i direction
-    Cell* jm; Cell* jp; //Neighbors in the j direction
-    Cell* km; Cell* kp; //Neighbors in the k direction
-    double theta; //Local value of theta
 
   public:
     Cell(int i, int o);
@@ -26,32 +22,13 @@ class Cell {
     int getId() {return id;}
     int getOr() {return orient;}
     int getLastUpdate() {return updateHistory.back();}
-    Cell* getIm() {return im;}
-    Cell* getIp() {return ip;}
-    Cell* getJm() {return jm;}
-    Cell* getJp() {return jp;}
-    Cell* getKm() {return km;}
-    Cell* getKp() {return kp;}
     //Setters
     void setId(int i) {id = i;}
     void setOr(int o) {orient = o;}
     void pushUpdate(int m);
     void resetUpdate();
-    void setIm(Cell *c) {im = c;}
-    void setIp(Cell *c) {ip = c;}
-    void setJm(Cell *c) {jm = c;}
-    void setJp(Cell *c) {jp = c;}
-    void setKm(Cell *c) {km = c;}
-    void setKp(Cell *c) {kp = c;}
-    //Energy functions
-    double pairEnergy(int i, int o, int q);
     //Utility functions
-    int numOfNNOr(int q);
-    int numOfNNId(int i);
-    int numOfNNOr() {return numOfNNOr(orient);} //Shortcut for self
-    int numOfNNId() {return numOfNNId(id);} //Shortcut for self
-    int isNeighbor(Cell* c);
-    void swapIdOr(Cell* c);
+    void printCell();
 };
 
 //Simulation
@@ -66,12 +43,23 @@ class Simulation {
     //std::atomic_flag* flags; //Array of flags (have atomic test and set)
 
     //Private functions
-    int wrap1d(int coord, int dir, int step);
-    int wrap3d(int index, int dir, int step);
-    double rotChange(Cell* c, int q);
-    double swapChange(Cell* c1, Cell* c2);
+    //Energy functions
+    double rotChange(int pos, int q);
+    double swapChange(int pos1, int pos2);
+    //Data functions
     double* calctheta();
     double* calcTheta();
+    //Periodic boundary functions
+    int wrap1d(int coord, int dir, int step);
+    //Cell query functions
+    double pairEnergy(int pos1, int pos2);
+    int numOfNNId(int pos, int i);
+    int numOfNNOr(int pos, int o);
+    int areNN(int pos1, int pos2);
+    //Cell manipulation functions
+    void swapIdOr(Cell* c1, Cell* c2);
+    //Utility functions
+    int step3d(int index, int dir, int step);
 
     //Friend for testing
     friend class SimTest;

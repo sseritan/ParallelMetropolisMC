@@ -37,85 +37,9 @@ void Cell::resetUpdate() {
   updateHistory.push_back(0);
 }
 
-//Compute energy of a given id and orientation with 1 neighbor
-double Cell::pairEnergy(int i, int o, int q) {
-  //If passed negative, use actual Cell values
-  if (i < 0) i = id;
-  if (o < 0) o = orient;
-
-  Cell* n;
-
-  //Get neighbor
-  switch (q) {
-    case 1: n = im; break;
-    case 2: n = ip; break;
-    case 3: n = jm; break;
-    case 4: n = jp; break;
-    case 5: n = km; break;
-    case 6: n = kp; break;
-    default:
-      cout << "Bad q pass to pairEnergy" << endl;
-      exit(1);
-      break;
-  }
-
-  double e = 0.0;
-  if (i == n->id) e -= K;
-  if (o == n->orient) e -= A;
-
-  return e;
-}
-
-//Count the number of neighbors that has orientation q
-//Used by rotChange
-int Cell::numOfNNOr(int q) {
-  int c = 0;
-
-  if (im->orient == q) c++;
-  if (ip->orient == q) c++;
-  if (jm->orient == q) c++;
-  if (jp->orient == q) c++;
-  if (km->orient == q) c++;
-  if (kp->orient == q) c++;
-
-  return c;
-}
-
-//Count the number of neighbors that has id i
-//Used by swapChange
-int Cell::numOfNNId(int i) {
-  int c = 0;
-
-  if (im->id == i) c++;
-  if (ip->id == i) c++;
-  if (jm->id == i) c++;
-  if (jp->id == i) c++;
-  if (km->id == i) c++;
-  if (kp->id == i) c++;
-
-  return c;
-}
-
-//Checks to see if a Cell is a neighbor
-int Cell::isNeighbor(Cell* c) {
-  if (im == c || ip == c || jm == c || jp == c || km == c || km == c) {
-    return 1;
-  }
-
-  return 0;
-}
-
-//Swaps the identity and orientation of two cells
-//This is cheaper than changing pointers and rearranging neighbor connections
-void Cell::swapIdOr(Cell* c) { //TODO: Implement theta changes
-  //Save my info
-  int tempId = id, tempOr = orient;
-
-  //Pull c's info
-  id = c->id; orient = c->orient;
-
-  //Put my info into c
-  c->id = tempId; c->orient = tempOr;
+//Prints out Cell info (for debugging)
+void Cell::printCell() {
+  cout << "Id: " << id << " Or: " << orient << endl;
 
   return;
 }
@@ -126,84 +50,34 @@ void Cell::swapIdOr(Cell* c) { //TODO: Implement theta changes
  ******************************/
 
 
-//1D periodic boundary condition
-int Simulation::wrap1d(int coord, int dir, int step) {
-  coord += step;
-
-  switch(dir) {
-    case 0:
-      if (coord < 0) coord += Lx;
-      if (coord >= Lx) coord -= Lx;
-      break;
-    case 1:
-      if (coord < 0) coord += Ly;
-      if (coord >= Ly) coord -= Ly;
-      break;
-    case 2:
-      if (coord < 0) coord += Lz;
-      if (coord >= Lz) coord -= Lz;
-      break;
-  }
-
-  return coord;
-}
-//Periodic boundary checking function
-int Simulation::wrap3d(int index, int dir, int step) {
-  //Convert index to 3D coords
-  int k = index/(Lx*Ly); //Which slice
-  int j = (index%(Lx*Ly))/Lx; //Which row on the slice
-  int i = (index%(Lx*Ly))%Lx; //Which element in the row on the slice
-
-  //Direction: 0 is i, 1 is j, 2 is k
-  switch (dir) {
-    case 0:
-      wrap1d(i, dir, step);
-      break;
-    case 1:
-      wrap1d(j, dir, step);
-      break;
-    case 2:
-      wrap1d(k, dir, step);
-      break;
-  }
-
-  //Revert back to index
-  return i + Lx*j + Lx*Ly*k;
-}
-
 //Calculate the energy change for a rotation move
-double Simulation::rotChange(Cell* c, int q) {
+double Simulation::rotChange(int pos, int q) {
   //Look at how many orientations match in old and new config
-  int o = c->numOfNNOr();
-  int n = c->numOfNNOr(q);
-
-  //cout << "o " << o << " n " << n << endl;
+  int o = numOfNNOr(pos, array[pos]->getOr());
+  int n = numOfNNOr(pos, q);
 
   //de = -A*(n - o)
   return (double)(o - n)*A;
 }
 
 //Calculate the energy change for a swap move
-double Simulation::swapChange(Cell* c1, Cell* c2) {
-  //Calculate current id and orientation matches
-  int o_id1 = c1->numOfNNId(), o_id2 = c2->numOfNNId();
-  int o_or1 = c1->numOfNNOr(), o_or2 = c2->numOfNNOr();
-
-
+double Simulation::swapChange(int pos1, int pos2) {
   //Get id and orientation info
-  int i1 = c1->getId(), i2 = c2->getId();
-  int o1 = c1->getOr(), o2 = c2->getOr();
+  int i1 = array[pos1]->getId(), i2 = array[pos2]->getId();
+  int o1 = array[pos1]->getOr(), o2 = array[pos2]->getOr();
 
-  //Calculate proposed id and orientation matches
-  int n_id1 = c1->numOfNNId(i2), n_id2 = c2->numOfNNId(i1);
-  int n_or1 = c1->numOfNNOr(o2), n_or2 = c2->numOfNNOr(o1);
+  //Calculate difference in id matches
+  int did = (numOfNNId(pos1, i2) + numOfNNId(pos2, i1)) - (numOfNNId(pos1, i1) + numOfNNId(pos2, i2));
+
+  //Calculate difference in orientation matches
+  int dor = (numOfNNOr(pos1, o2) + numOfNNOr(pos2, o1)) - (numOfNNOr(pos1, o1) + numOfNNOr(pos2, o2));
 
   //de = -K((n_id1 + n_id2) - (o_id1 + o_id2)) - A((n_or1 + n_or2) - (o_or1 + o_or2))
-  double de = K*(double)((o_id1 + o_id2) - (n_id1 + n_id2)) + A*(double)((o_or1 + o_or2) - (n_or1 + n_or2));
+  double de = -K*(double)did - A*(double)dor;
 
   //If the two are neighbors and are diff id or orient, need to subtract an overcount
   //This is because the environment was not actually updated
-  if (c1->isNeighbor(c2)) {
+  if (areNN(pos1, pos2)) {
     if (i1 != i2) {
       de += 2*K;
     }
@@ -294,6 +168,116 @@ double* Simulation::calcTheta() {
   return Theta;
 }
 
+//1D periodic boundary condition
+int Simulation::wrap1d(int coord, int dir, int step) {
+  coord += step;
+
+  switch(dir) {
+    case 0:
+      if (coord < 0) coord += Lx;
+      if (coord >= Lx) coord -= Lx;
+      break;
+    case 1:
+      if (coord < 0) coord += Ly;
+      if (coord >= Ly) coord -= Ly;
+      break;
+    case 2:
+      if (coord < 0) coord += Lz;
+      if (coord >= Lz) coord -= Lz;
+      break;
+  }
+
+  return coord;
+}
+
+//Calculate the energy between two lattice positions
+double Simulation::pairEnergy(int pos1, int pos2) {
+  double e = 0.0;
+
+  if (array[pos1]->getId() == array[pos2]->getId()) e -= K;
+  if (array[pos1]->getOr() == array[pos2]->getOr()) e -= A;
+
+  return e;
+}
+
+//Check to see how many neighbors of array[pos] have id i
+int Simulation::numOfNNId(int pos, int i) {
+  int count = 0;
+
+  //Run through neighbors and count matching ids
+  for (int i = 0; i < 3; i++) {
+    for (int j = -1; j <= 1; j += 2) {
+      if (array[step3d(pos, i, j)]->getId() == i) count++;
+    }
+  }
+
+  return count;
+}
+
+//Check to see how many neighbors of array[pos] have orientation o
+int Simulation::numOfNNOr(int pos, int o) {
+  int count = 0;
+
+  //Run through neighbors and count matching ids
+  for (int i = 0; i < 3; i++) {
+    for (int j = -1; j <= 1; j += 2) {
+      if (array[step3d(pos, i, j)]->getOr() == o) count++;
+    }
+  }
+
+  return count;
+}
+
+//Check to see if two indices are neighbors in 3D
+int Simulation::areNN(int pos1, int pos2) {
+  for (int i = 0; i < 3; i++) {
+    for (int j = -1; j <= 1; j+= 2) {
+      if (step3d(pos1, i, j) == pos2) return 1;
+    }
+  }
+
+  return 0;
+}
+
+//Swaps the identity and orientation of two cells
+//This is cheaper than changing pointers and rearranging neighbor connections
+void Simulation::swapIdOr(Cell* c1, Cell* c2) {
+  //Save 1's info
+  int tempId = c1->getId(), tempOr = c1->getOr();
+
+  //Pull 2's info into 1
+  c1->setId(c2->getId()); c1->setOr(c2->getOr());
+
+  //Put 1's info into 2
+  c2->setId(tempId); c2->setOr(tempOr);
+
+  return;
+}
+
+//Step of 1D index in 3D coords, with periodic boundary conditions
+int Simulation::step3d(int index, int dir, int step) {
+  //Convert index to 3D coords
+  int k = index/(Lx*Ly); //Which slice
+  int j = (index%(Lx*Ly))/Lx; //Which row on the slice
+  int i = (index%(Lx*Ly))%Lx; //Which element in the row on the slice
+
+  //Direction: 0 is i, 1 is j, 2 is k
+  switch (dir) {
+    case 0:
+      wrap1d(i, dir, step);
+      break;
+    case 1:
+      wrap1d(j, dir, step);
+      break;
+    case 2:
+      wrap1d(k, dir, step);
+      break;
+  }
+
+  //Revert back to index
+  return i + Lx*j + Lx*Ly*k;
+}
+
 
 /*****************************
  * Simulation PUBLIC FUNCTIONS
@@ -327,18 +311,6 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
     array[i] = new Cell(2, 1);
   }
 
-  //Secondary cell initialization
-  for (int i = 0; i < NMAX; i++) {
-    //Link cell with neighbors
-    array[i]->setIm(array[wrap3d(i, 0, -1)]);
-    array[i]->setIp(array[wrap3d(i, 0, 1)]);
-    array[i]->setJm(array[wrap3d(i, 1, -1)]);
-    array[i]->setJp(array[wrap3d(i, 1, 1)]);
-    array[i]->setKm(array[wrap3d(i, 2, -1)]);
-    array[i]->setKp(array[wrap3d(i, 2, 1)]);
-  }
-
-
   //Initialize random number generation
   auto seed = chrono::high_resolution_clock::now().time_since_epoch().count();
   cout << "Using seed " << seed << " for srand()" << endl;
@@ -348,9 +320,9 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
   energy = 0.0;
   for (int i = 0; i < NMAX; i++) {
     //Calculate pairwise energy with forward pairs in each direction
-    energy += array[i]->pairEnergy(-1, -1, 2); //In forward i direction
-    energy += array[i]->pairEnergy(-1, -1, 4); //In forward j direction
-    energy += array[i]->pairEnergy(-1, -1, 6); //In forward k direction
+    for (int j = 0; j < 3; j++) {
+      energy += pairEnergy(i, step3d(i, j, 1));
+    }
   }
 
   cout << "Initial energy: " << energy/kT << endl;
@@ -379,7 +351,7 @@ void Simulation::doSweep() {
       int q = rand()%6 + 1;
 
       //Calculate energy change associated with rotation
-      double de = rotChange(array[index], q)/kT;
+      double de = rotChange(index, q)/kT;
 
       //Check acceptance
       if ((double)rand()/(double)RAND_MAX < exp(-de)) {
@@ -396,12 +368,12 @@ void Simulation::doSweep() {
       int index2 = rand()%(NMAX);
 
       //Calculate energy change associated with swap
-      double de = swapChange(array[index1], array[index2])/kT;
+      double de = swapChange(index1, index2)/kT;
 
       //Check acceptance
       if ((double)rand()/(double)RAND_MAX < exp(-de)) {
         //Swap cells
-        array[index1]->swapIdOr(array[index2]);
+        swapIdOr(array[index1], array[index2]);
 
         //Update history
         array[index1]->pushUpdate(t);
