@@ -519,7 +519,7 @@ double* Simulation::calcX1() {
 //Dummy constructor
 Simulation::Simulation(int dummy) {
   Lx = 4; Ly = 4; Lz = 4;
-  NMAX = Lx*Ly*Lz;
+  NMAX = 64;
   kT = 1;
   cutoff = 0;
   cout << "\nINPUT DETAILS" << endl;
@@ -553,17 +553,46 @@ Simulation::Simulation(int dummy) {
 
   //Hardcode some cells for testing (id and orient are the same for simplicity)
   //k = 0    k = 1    k = 2    k=3
-  //1 1 1 1  - 1 - -  - - - -  - 1 - -
-  //1 1 1 2  - 1 - 1  - - - -  - 1 - 1
-  //2 1 2 1  - - 1 -  - - - -  - - 1 -
-  //2 1 1 2  1 - - -  - - - -  2 - - -
-  array[7]->setId(2); array[7]->setOr(2);
-  array[8]->setId(2); array[8]->setOr(2);
-  array[10]->setId(2); array[10]->setOr(2);
-  array[12]->setId(2); array[12]->setOr(2);
-  array[15]->setId(2); array[15]->setOr(2);
-  
-  array[60]->setId(2); array[60]->setOr(2);
+  //1 1 1 1  - 1 2 -  - 2 2 2  - 1 2 -
+  //1 1 1 2  - 1 2 1  - 2 2 2  - 1 2 1
+  //2 1 2 1  - 2 1 -  2 1 2 -  - 2 1 -
+  //2 1 1 2  1 - - -  - 2 2 -  2 - - -
+  array[3 + 1*Lx + 0*Lx*Ly]->setId(2); array[3 + 1*Lx + 0*Lx*Ly]->setOr(2);
+  array[0 + 2*Lx + 0*Lx*Ly]->setId(2); array[0 + 2*Lx + 0*Lx*Ly]->setOr(2);
+  array[2 + 2*Lx + 0*Lx*Ly]->setId(2); array[2 + 2*Lx + 0*Lx*Ly]->setOr(2);
+  array[0 + 3*Lx + 0*Lx*Ly]->setId(2); array[0 + 3*Lx + 0*Lx*Ly]->setOr(2);
+  array[3 + 3*Lx + 0*Lx*Ly]->setId(2); array[3 + 3*Lx + 0*Lx*Ly]->setOr(2);
+
+  array[2 + 0*Lx + 1*Lx*Ly]->setId(2); array[2 + 0*Lx + 1*Lx*Ly]->setOr(2);
+  array[2 + 1*Lx + 1*Lx*Ly]->setId(2); array[2 + 1*Lx + 1*Lx*Ly]->setOr(2);
+  array[1 + 2*Lx + 1*Lx*Ly]->setId(2); array[1 + 2*Lx + 1*Lx*Ly]->setOr(2);
+
+  array[1 + 0*Lx + 2*Lx*Ly]->setId(2); array[1 + 0*Lx + 2*Lx*Ly]->setOr(2);
+  array[2 + 0*Lx + 2*Lx*Ly]->setId(2); array[2 + 0*Lx + 2*Lx*Ly]->setOr(2);
+  array[3 + 0*Lx + 2*Lx*Ly]->setId(2); array[3 + 0*Lx + 2*Lx*Ly]->setOr(2);
+  array[1 + 1*Lx + 2*Lx*Ly]->setId(2); array[1 + 1*Lx + 2*Lx*Ly]->setOr(2);
+  array[2 + 1*Lx + 2*Lx*Ly]->setId(2); array[2 + 1*Lx + 2*Lx*Ly]->setOr(2);
+  array[3 + 1*Lx + 2*Lx*Ly]->setId(2); array[3 + 1*Lx + 2*Lx*Ly]->setOr(2);
+  array[0 + 2*Lx + 2*Lx*Ly]->setId(2); array[0 + 2*Lx + 2*Lx*Ly]->setOr(2);
+  array[2 + 2*Lx + 2*Lx*Ly]->setId(2); array[2 + 2*Lx + 2*Lx*Ly]->setOr(2);
+  array[1 + 3*Lx + 2*Lx*Ly]->setId(2); array[1 + 3*Lx + 2*Lx*Ly]->setOr(2);
+  array[2 + 3*Lx + 2*Lx*Ly]->setId(2); array[2 + 3*Lx + 2*Lx*Ly]->setOr(2);
+
+  array[2 + 0*Lx + 3*Lx*Ly]->setId(2); array[2 + 0*Lx + 3*Lx*Ly]->setOr(2);
+  array[2 + 1*Lx + 3*Lx*Ly]->setId(2); array[2 + 1*Lx + 3*Lx*Ly]->setOr(2);
+  array[1 + 2*Lx + 3*Lx*Ly]->setId(2); array[1 + 2*Lx + 3*Lx*Ly]->setOr(2);
+  array[0 + 3*Lx + 3*Lx*Ly]->setId(2); array[0 + 3*Lx + 3*Lx*Ly]->setOr(2);
+
+  //Print out array just in case
+  for (int k = 0; k < 4; k++) {
+    for (int j = 0; j < 4; j++) {
+      for (int i = 0; i < 4; i++) {
+        cout << array[i+ Lx*j + Lx*Ly*k]->getId() << array[i+ Lx*j + Lx*Ly*k]->getOr() << " ";
+      }
+      cout << endl;
+    }
+    cout << endl;
+  }
 
   //Initialize thetas and energies
   energy = 0.0;
@@ -579,7 +608,7 @@ Simulation::Simulation(int dummy) {
 
 int Simulation::testChange(double r, double e) {
   if (r != e) {
-    cout << "Failed." << endl;
+    cout << "Failed. Expected " << e << " but got " << r << "." << endl;
     return 1;
   }
   cout << "Passed!" << endl;
@@ -590,52 +619,141 @@ int Simulation::testChange(double r, double e) {
 int Simulation::rot_no_change() {
   int failed = 0;
 
-  cout << "No change rotation (matching, central): ";
-  failed += testChange(rotChange(array[5], array[5]->getOr()), 0.0);
+  //(1, 1, 0)
+  cout << "No change rotation (1 matching, central): ";
+  failed += testChange(rotChange(array[5], 1), 0.0);
 
-  cout << "No change rotation (matching, boundary): ";
-  failed += testChange(rotChange(array[1], array[1]->getOr()), 0.0);
+  //(1, 0, 0)
+  cout << "No change rotation (1 matching, boundary): ";
+  failed += testChange(rotChange(array[1], 1), 0.0);
 
-  cout << "No change rotation (non-matching, central): ";
-  failed += testChange(rotChange(array[10], array[10]->getOr()), 0.0);
+  //(2, 2, 0)
+  cout << "No change rotation (2 non-matching, central): ";
+  failed += testChange(rotChange(array[10], 2), 0.0);
 
-  cout << "No change rotation (non-matching, boundary): ";
-  failed += testChange(rotChange(array[7], array[7]->getOr()), 0.0);
+  //(3, 1, 0)
+  cout << "No change rotation (2 non-matching, boundary): ";
+  failed += testChange(rotChange(array[7], 2), 0.0);
 
-  cout << "No change rotation (mixed, boundary): ";
-  failed += testChange(rotChange(array[15], array[15]->getOr()), 0.0);
+  //(0, 3, 0)
+  cout << "No change rotation (perfect mix, boundary): ";
+  failed += testChange(rotChange(array[12], 2), 0.0);
+
+  //(0, 3, 0) (3 orientations broken but 3 also made)
+  cout << "No change rotation (perfect mix swap, boundary): ";
+  failed += testChange(rotChange(array[12], 1), 0.0);
 
   return failed;
 }
 
 //Test rotations where de < 0
 int Simulation::rot_good_change() {
-  return 0;
+  int failed = 0;
+
+  //(1, 2, 2) 1 by all 2s -> 2 (6 orientations now match)
+  cout << "Good change rotation (1->2, central): ";
+  failed += testChange(rotChange(array[41], 2), -6.0);
+
+  //(2, 2, 0) 2 by all 1s -> 1 (6 orientations now match)
+  cout << "Good change rotation (2->1, central): ";
+  failed += testChange(rotChange(array[10], 1), -6.0);
+
+  //(3, 1, 0) 2 by all 1s -> 1 (6 orientations now match)
+  cout << "Good change rotation (2->1, boundary): ";
+  failed += testChange(rotChange(array[7], 1), -6.0);
+
+  return failed;
 }
 
 //Test rotations where de > 0
 int Simulation::rot_bad_change() {
+  int failed = 0;
+
+  //(1, 1, 0) 1 by all 1s -> 2 (6 orientations broken)
+  cout << "Bad change rotation (1->2, central): ";
+  failed += testChange(rotChange(array[5], 2), 6.0);
+
+  //(1, 0, 0) 1 by all 1s -> 2 (6 orientations broken)
+  cout << "Bad change rotation (1->2, boundary): ";
+  failed += testChange(rotChange(array[1], 2), 6.0);
+
+  //(2, 1, 2) 2 by all 2s -> 1 (6 orientations broken)
+  cout << "Bad change rotation (2->1, central): ";
+  failed += testChange(rotChange(array[38], 1), 6.0);
+
+  //(2, 0, 2) 2 by all 2s -> 1 (6 orientations broken)
+  cout << "Bad change rotation (2->1, boundary): ";
+  failed += testChange(rotChange(array[34], 1), 6.0);
+
   return 0;
 }
 
 //Test swaps where de = 0
 int Simulation::swap_no_change() {
-  return 0;
+  int failed = 0;
+
+  //(3, 1, 0) with (2, 2, 0) 2s by all 1s, overlapping neighbors
+  cout << "No change swap (non-matching 2s, overlapping neighbors, central/boundary): ";
+  failed += testChange(swapChange(array[7], array[10]), 0.0);
+
+  //(1, 1, 0) with (2, 2, 0) 1 by all 1s <-> 2 by all 1s (equal environments)
+  cout << "No change swap (1 <-> 2 in all 1s, central): ";
+  failed += testChange(swapChange(array[5], array[10]), 0.0);
+
+  //(1, 0, 0) with (2, 2, 0) 1 by all 1s <-> 2 by all 1s (equal environments)
+  cout << "No change swap (1 <-> 2 in all 1s, central/boundary): ";
+  failed += testChange(swapChange(array[1], array[10]), 0.0);
+
+  //(2, 2, 0) with (2, 1, 2) 2s by all 1s <-> 2s (equal orient, diff environments)
+  cout << "No change swap (2s in all 1s <-> 2s, central): ";
+  failed += testChange(swapChange(array[10], array[38]), 0.0);
+
+  //(2, 2, 0) with (2, 0, 2) 2s by all 1s <-> 2s (equal orient)
+  cout << "No change swap (2s in all 1s <-> 2s, central/boundary): ";
+  failed += testChange(swapChange(array[10], array[34]), 0.0);
+
+  return failed;
 }
 
 //Test swaps where de < 0
 int Simulation::swap_good_change() {
-  return 0;
+  int failed = 0;
+
+  //(1, 2, 2) with (2, 2, 0) 2 in all 1s <-> 1 in all 2s (max benefits (2*6*-1.5 = -18))
+  cout << "Good change swap (2 in 1s <-> 1 in 2s, central): ";
+  failed += testChange(swapChange(array[41], array[10]), -18.0);
+
+  //(0, 2, 0) with (2, 1, 0) 2 in mostly 1s <-> 1 in mostly 2s (break 1+2, make 4+5 ((9-3)*-1.5 = -9)
+  cout << "Good change swap (2 in mixed <-> 1 in 2s, central/boundary): ";
+  failed += testChange(swapChange(array[8], array[6]), -9.0);
+
+  return failed;
 }
 
 //Test swaps where de > 0
 int Simulation::swap_bad_change() {
-  return 0;
+  int failed = 0;
+
+  //(1, 1, 0) with (2, 1, 2) 1 in all 1s <-> 2 in all 2s (max breakage (2*6*1.5 = 18))
+  cout << "Bad change swap (1 in 1s <-> 2 in 2s, central): ";
+  failed += testChange(swapChange(array[5], array[38]), 18.0);
+
+  return failed;
 }
 
 //Test neighbor swaps where de = 0
 int Simulation::swap_nn_no_change() {
-  return 0;
+  int failed = 0;
+
+  //(1, 1, 0) with (1, 0, 0) 1s surrounded by all 1s
+  cout << "No change swap (matching 1s, central/boundary): ";
+  failed += testChange(swapChange(array[5], array[1]), 0.0);
+
+  //(2, 1, 2) with (2, 0, 2) 2s surrounded by all 2s
+  cout << "No change swap (matching 2s, central/boundary): ";
+  failed += testChange(swapChange(array[38], array[34]), 0.0);
+
+  return failed;
 }
 
 //Test neighbor swaps where de < 0
