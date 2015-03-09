@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
   int runType, x, y, z, eqSweeps, dataSweeps;
   double kT, compA, cutoff;
   if (argc != 9) {
-    cout << "Usage:\n./MC <kT> <x> <y> <z> <Eq. Sweeps> <Data Sweeps> <CompA> <Cutoff>" << endl;
+    cout << "Usage: ./MC <kT> <x> <y> <z> <Eq. Sweeps> <Data Sweeps> <CompA> <Cutoff>" << endl;
     exit(1);
   } else {
     //Parse arguments

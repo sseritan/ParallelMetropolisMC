@@ -66,67 +66,34 @@ double Cell::pairEnergy(int i, int o, int q) {
   return e;
 }
 
-//Compute energy with all neighbors
-//Pass neg values to use actual Cell values
-//Otherwise, can be used to calculate "fake" energies
-double Cell::pointEnergy(int i, int o) {
-  //If neg values passed in, use actual Cell values
-  if (i < 0) i = id;
-  if (o < 0) o = orient;
+//Count the number of neighbors that has orientation q
+//Used by rotChange
+int Cell::numOfNNOr(int q) {
+  int c = 0;
 
-  double e = 0.0;
-  for (int q = 1; q <= 6; q++) {
-    e += pairEnergy(i, o, q);
-  }
+  if (im->orient == q) c++;
+  if (ip->orient == q) c++;
+  if (jm->orient == q) c++;
+  if (jp->orient == q) c++;
+  if (km->orient == q) c++;
+  if (kp->orient == q) c++;
 
-  return e;
+  return c;
 }
 
-//Initialize theta (M=6) for a lattice position
-//From V. Argawal and B. Peters, J. Chem. Phys. 140, 084111
-void Cell::thetaInit() {
-  theta = 0.5;
+//Count the number of neighbors that has id i
+//Used by swapChange
+int Cell::numOfNNId(int i) {
+  int c = 0;
 
-  //Run through neighbors
-  if (id == im->id) {
-    theta += 1.0/12.0;
-  }
-  if (id == ip->id) {
-    theta += 1.0/12.0;
-  }
-  if (id == jm->id) {
-    theta += 1.0/12.0;
-  }
-  if (id == jp->id) {
-    theta += 1.0/12.0;
-  }
-  if (id == km->id) {
-    theta += 1.0/12.0;
-  }
-  if (id == kp->id) {
-    theta += 1.0/12.0;
-  }
+  if (im->id == i) c++;
+  if (ip->id == i) c++;
+  if (jm->id == i) c++;
+  if (jp->id == i) c++;
+  if (km->id == i) c++;
+  if (kp->id == i) c++;
 
-  //If id = 2, we actually wanted to flip it towards 0
-  if (id == 2) {
-    theta = 1.0 - theta;
-  }
-}
-
-//Average thetas into Theta (M=7) for a lattice position
-//From V. Argawal and B. Peters, J. Chem. Phys. 140, 084111
-double Cell::calcTheta() {
-  //Sum thetas
-  double Theta = theta;
-  Theta += im->theta;
-  Theta += ip->theta;
-  Theta += jm->theta;
-  Theta += jp->theta;
-  Theta += km->theta;
-  Theta += kp->theta;
-
-  //Average out Theta
-  return Theta/7.0;
+  return c;
 }
 
 //Checks to see if a Cell is a neighbor
@@ -206,40 +173,49 @@ int Simulation::wrap3d(int index, int dir, int step) {
 
 //Calculate the energy change for a rotation move
 double Simulation::rotChange(Cell* c, int q) {
-  //Calculate current energy
-  double e1 = c->pointEnergy(-1, -1);
+  //Look at how many orientations match in old and new config
+  int o = c->numOfNNOr();
+  int n = c->numOfNNOr(q);
 
-  //Calculate fake energy
-  double e2 = c->pointEnergy(-1, q);
+  //cout << "o " << o << " n " << n << endl;
 
-  return (e2 - e1);
+  //de = -A*(n - o)
+  return (double)(o - n)*A;
 }
 
 //Calculate the energy change for a swap move
 double Simulation::swapChange(Cell* c1, Cell* c2) {
-  //Calculate current energy
-  double e1 = c1->pointEnergy(-1, -1) + c2->pointEnergy(-1, -1);
+  //Calculate current id and orientation matches
+  int o_id1 = c1->numOfNNId(), o_id2 = c2->numOfNNId();
+  int o_or1 = c1->numOfNNOr(), o_or2 = c2->numOfNNOr();
 
+
+  //Get id and orientation info
   int i1 = c1->getId(), i2 = c2->getId();
   int o1 = c1->getOr(), o2 = c2->getOr();
 
-  //Calculate the fake energy of if move accepted
-  double e2 = c1->pointEnergy(i2, o2) + c2->pointEnergy(i1, o1);
+  //Calculate proposed id and orientation matches
+  int n_id1 = c1->numOfNNId(i2), n_id2 = c2->numOfNNId(i1);
+  int n_or1 = c1->numOfNNOr(o2), n_or2 = c2->numOfNNOr(o1);
+
+  //de = -K((n_id1 + n_id2) - (o_id1 + o_id2)) - A((n_or1 + n_or2) - (o_or1 + o_or2))
+  double de = K*(double)((o_id1 + o_id2) - (n_id1 + n_id2)) + A*(double)((o_or1 + o_or2) - (n_or1 + n_or2));
 
   //If the two are neighbors and are diff id or orient, need to subtract an overcount
+  //This is because the environment was not actually updated
   if (c1->isNeighbor(c2)) {
     if (i1 != i2) {
-      e2 += 2*K;
+      de += 2*K;
     }
     if (o1 != o2) {
-      e2 += 2*A;
+      de += 2*A;
     }
   }
 
-  return (e2 - e1);
+  return de;
 }
 
-/*Calculate theta (M=26)
+//Calculate theta (M=26)
 //From V. Argawal and B. Peters, J. Chem. Phys. 140, 084111
 double* Simulation::calctheta() {
   //Initialize
@@ -317,7 +293,7 @@ double* Simulation::calcTheta() {
 
   return Theta;
 }
-*/
+
 
 /*****************************
  * Simulation PUBLIC FUNCTIONS
@@ -360,9 +336,6 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
     array[i]->setJp(array[wrap3d(i, 1, 1)]);
     array[i]->setKm(array[wrap3d(i, 2, -1)]);
     array[i]->setKp(array[wrap3d(i, 2, 1)]);
-
-    //Initialize theta
-    array[i]->thetaInit();
   }
 
 
@@ -416,7 +389,6 @@ void Simulation::doSweep() {
 
         //Update energy
         energy += de;
-        cout << "Rotation change " << de << " Accepted." << endl;
       }
     } else {
       //Particle swap move
@@ -437,7 +409,6 @@ void Simulation::doSweep() {
 
         //Update energy
         energy += de;
-        cout << "Swap change " << de << " Accepted." << endl;
       }
     }
   }
@@ -455,11 +426,11 @@ double* Simulation::calcThetaHistogram() {
     h[i] = 0.0;
   }
 
-  /* double* Theta = calcTheta(); */
+  double* Theta = calcTheta();
 
   for (int i = 0; i < NMAX; i++) {
     //Get index in histogram
-    int index = floorf(array[i]->calcTheta()*100);
+    int index = floorf(Theta[i]*100);
     if (index < 0) index = 0;
     if (index > 99) index = 99;
 
@@ -472,7 +443,7 @@ double* Simulation::calcThetaHistogram() {
   }
 
   //Memory Management
-  //delete[] Theta;
+  delete[] Theta;
 
   return h;
 }
@@ -481,11 +452,11 @@ double* Simulation::calcX1() {
   int n [2] = {0, 0}; //Number of particles in each phase
   int n1 [2] = {0, 0}; // Number of species i in each phase
 
-  //double* Theta = calcTheta();
+  double* Theta = calcTheta();
 
   for (int i = 0; i < NMAX; i++) {
     //Decide if in 1-rich or 2-rich phase
-    if (array[i]->calcTheta() >= cutoff) {
+    if (Theta[i] >= cutoff) {
       n[0]++;
       if (array[i]->getId() == 1) {
         n1[0]++;
@@ -499,7 +470,7 @@ double* Simulation::calcX1() {
   }
 
   //Memory Management
-  //delete[] Theta;
+  delete[] Theta;
 
   //Calculate mole fraction from n1/n for each phase
   double* X1 = new double [2];

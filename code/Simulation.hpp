@@ -45,11 +45,11 @@ class Cell {
     void setKp(Cell *c) {kp = c;}
     //Energy functions
     double pairEnergy(int i, int o, int q);
-    double pointEnergy(int i, int o);
-    //Data functions
-    void thetaInit();
-    double calcTheta();
     //Utility functions
+    int numOfNNOr(int q);
+    int numOfNNId(int i);
+    int numOfNNOr() {return numOfNNOr(orient);} //Shortcut for self
+    int numOfNNId() {return numOfNNId(id);} //Shortcut for self
     int isNeighbor(Cell* c);
     void swapIdOr(Cell* c);
 };
