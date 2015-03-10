@@ -205,9 +205,9 @@ int Simulation::numOfNNId(int pos, int i) {
   int count = 0;
 
   //Run through neighbors and count matching ids
-  for (int i = 0; i < 3; i++) {
-    for (int j = -1; j <= 1; j += 2) {
-      if (array[step3d(pos, i, j)]->getId() == i) count++;
+  for (int j = 0; j < 3; j++) {
+    for (int k = -1; k <= 1; k += 2) {
+      if (array[step3d(pos, j, k)]->getId() == i) count++;
     }
   }
 
@@ -264,13 +264,13 @@ int Simulation::step3d(int index, int dir, int step) {
   //Direction: 0 is i, 1 is j, 2 is k
   switch (dir) {
     case 0:
-      wrap1d(i, dir, step);
+      i = wrap1d(i, dir, step);
       break;
     case 1:
-      wrap1d(j, dir, step);
+      j = wrap1d(j, dir, step);
       break;
     case 2:
-      wrap1d(k, dir, step);
+      k = wrap1d(k, dir, step);
       break;
   }
 

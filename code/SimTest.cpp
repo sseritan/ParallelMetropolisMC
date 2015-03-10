@@ -145,16 +145,16 @@ int SimTest::step() {
   failed += compExp(step3d(0, 0, 1), 1);
 
   cout << "j-1 (origin): ";
-  failed += compExp(step3d(0, 1, -1), 3);
+  failed += compExp(step3d(0, 1, -1), 12);
 
   cout << "j+1 (origin): ";
-  failed += compExp(step3d(0, 1, 1), 1);
+  failed += compExp(step3d(0, 1, 1), 4);
 
   cout << "k-1 (origin): ";
-  failed += compExp(step3d(0, 2, -1), 3);
+  failed += compExp(step3d(0, 2, -1), 48);
 
   cout << "k+1 (origin): ";
-  failed += compExp(step3d(0, 2, 1), 1);
+  failed += compExp(step3d(0, 2, 1), 16);
 
   return failed;
 }
@@ -397,9 +397,9 @@ int SimTest::swap_nn_good_change() {
 int SimTest::swap_nn_bad_change() {
   int failed = 0;
 
-  //(0, 3, 0) with (1, 3, 0) 2 in mixed <-> 1 in mostly 1s (break 3+5, make 0+3 ((3-8)*-1.5 = 7.5))
+  //(0, 3, 0) with (1, 3, 0) 2 in mixed <-> 1 in mostly 1s (break 3+5, make 0+2 ((2-8)*-1.5 = 9))
   cout << "Bad change nn swap (2 in mixed <-> 1 in some 1s, boundary): ";
-  failed += compExp(swapChange(12, 13), 7.5);
+  failed += compExp(swapChange(12, 13), 9);
 
   return failed;
 }
