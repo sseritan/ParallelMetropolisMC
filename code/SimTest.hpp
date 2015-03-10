@@ -13,8 +13,15 @@ class SimTest : public Simulation {
     SimTest();
     //Default destructor is enough
     //TESTING FUNCTIONS
+    //Periodic boundary tests
+    int wrap();
+    int step();
+    //Neighbor info tests
+    int nn_id_count();
+    int nn_or_count();
+    int are_nn();
     //Test helper function
-    int testChange(double r, double e);
+    int compExp(double r, double e);
     //Rotation tests
     int rot_no_change();
     int rot_good_change();

@@ -17,6 +17,17 @@ int main() {
 
   int failed = 0;
 
+  //Test periodic boundary functions
+  cout << "PERIODIC BOUNDARY TESTS:" << endl;
+  failed += st->wrap();
+  failed += st->step();
+
+  //Test neighbor functions
+  cout << "NEIGHBOR TESTS:" << endl;
+  failed += st->nn_id_count();
+  failed += st->nn_or_count();
+  failed += st->are_nn();
+
   //Test rotChange
   cout << "ROTATION TESTS:" << endl;
   failed += st->rot_no_change();

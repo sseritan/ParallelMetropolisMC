@@ -5,3 +5,5 @@ Proposal.log
 Proposal.synctex.gz
 .DS_Store
 code/MC
+code/test.dSYM/Contents/Info.plist
+code/test.dSYM/Contents/Resources/DWARF/test
