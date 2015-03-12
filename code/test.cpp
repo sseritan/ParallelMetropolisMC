@@ -49,7 +49,7 @@ int main() {
   if (failed) {
     cout << "\nFailed " << failed << " tests. :(" << endl;
   } else {
-    cout << "\nPassed all tests! :D" << endl;
+    cout << "\nPassed all tests! :D Here is a congratulatory sweet potato 🍠" << endl;
   }
 
   //Memory Management

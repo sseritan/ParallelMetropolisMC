@@ -1,11 +1,11 @@
-CC=g++
-CFLAGS=-O2 -march=native -std=c++11
+CC=icc
+CFLAGS=-O2 -march=native -std=c++11 -ltbb -I /opt/intel/composer_xe_2015.2.132/tbb/include
 
-MC: MetropolisMC.cpp MetropolisMC.hpp Simulation.cpp Simulation.hpp
+MC: MetropolisMC.cpp Simulation.cpp Simulation.hpp CellMove.hpp
 	$(CC) $(CFLAGS) MetropolisMC.cpp Simulation.cpp -o MC
 
-test: test.cpp Simulation.hpp Simulation.cpp SimTest.cpp SimTest.hpp
-	$(CC) -std=c++11 -g test.cpp SimTest.cpp Simulation.cpp -o test
+test: test.cpp Simulation.hpp Simulation.cpp SimTest.cpp SimTest.hpp CellMove.hpp
+	$(CC) -std=c++11 test.cpp SimTest.cpp Simulation.cpp -o test
 
 clean:
 	rm -f MC test

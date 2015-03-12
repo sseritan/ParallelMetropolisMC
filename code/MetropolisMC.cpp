@@ -10,13 +10,12 @@
 //I/O includes
 #include <iostream>
 //Stdlib include for atoi, atof
-#include <cstdlib>
+#include <stdlib.h>
 //Time include
 #include <chrono>
-#include <ctime>
+#include <time.h>
 
 //Local include
-#include "./MetropolisMC.hpp"
 #include "./Simulation.hpp"
 
 using namespace std;
@@ -45,14 +44,11 @@ int main(int argc, char* argv[]) {
   //Print out simulation information
   auto start_time = chrono::system_clock::to_time_t(chrono::system_clock::now());
   cout << "Started simulation on " << ctime(&start_time) << endl;
-  cout << "SIMULATION DETAILS" << endl;
-  cout << "Hamiltonian: K=" << K << " A=" << A << endl;
-  cout << "Move probabilities: Rotation=" << ROTATION << " Particle Swap=" << PARTSWAP << endl;
-  cout << "Sweep information: Equilibration=" << eqSweeps << " Data Gathering=" << dataSweeps << endl;
 
   auto start = chrono::high_resolution_clock::now();
 
   Simulation* sim = new Simulation(x, y, z, kT, compA, cutoff);
+  cout << "Sweep information: Equilibration=" << eqSweeps << " Data Gathering=" << dataSweeps << endl;
 
   auto end = chrono::high_resolution_clock::now();
   //Initialization timing

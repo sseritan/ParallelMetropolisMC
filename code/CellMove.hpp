@@ -1,0 +1,49 @@
+//
+// Written by Stefan Seritan on 03/11/15 for CS 140
+// Cell and Move classes (encapsulation for Simulation data)
+//
+
+#ifndef _CELL_MOVE_HPP_
+#define _CELL_MOVE_HPP_
+
+#include "tbb/concurrent_vector.h"
+
+//Cell class
+//Store id, orientation, and update history
+class Cell {
+    int id, orient; //Identity and orientation
+    tbb::concurrent_vector<int> moves; //Keeps track of which moves affect the cell
+
+  public:
+    Cell(int i, int o) : id(i), orient(o) {};
+    //Getters
+    int getId() {return id;}
+    int getOr() {return orient;}
+    int checkMove() {return moves[0];}
+    //Setters
+    void setId(int i) {id = i;}
+    void setOr(int o) {orient = o;}
+    void pushMove(int m) {moves.push_back(m);}
+    //Utility functions
+    void printCell() {std::cout << "Id " << id << " Or " << orient << std::endl;}
+};
+
+//Lightweight container to hold move info
+class Move {
+    int type; //0 for rotation, 1 for particle swap
+    int time; //time id, used for conflict resolution
+    int pos; //Lattice position
+    int par; //Parameter: will be new or for rotation, 2nd position if swap
+
+  public:
+    Move(int ty, int ti, int p, int q);
+    //Default destructor is ok
+    //Getters
+    int getType() {return type;}
+    int getTime() {return time;}
+    int getPos() {return pos;}
+    int getPar() {return par;}
+    //No setters
+};
+
+#endif

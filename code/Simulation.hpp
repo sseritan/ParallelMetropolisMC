@@ -1,38 +1,24 @@
 //
 //
 // Written by Stefan Seritan on 03/06/15
-// Header file for Simulation.cpp
+// Header file for Simulation class
 //
 
 #ifndef _SIMULATION_HPP_
 #define _SIMULATION_HPP_
 
-#include <vector>
-#include <atomic>
+#include "./CellMove.hpp"
 
-//Cell class
-//Store id, orientation, and update history
-class Cell {
-    int id, orient; //Identity and orientation
-    std::vector<int> updateHistory; //Array of ints to keep track of which moves update the cell
-
-  public:
-    Cell(int i, int o);
-    //Getters
-    int getId() {return id;}
-    int getOr() {return orient;}
-    int getLastUpdate() {return updateHistory.back();}
-    //Setters
-    void setId(int i) {id = i;}
-    void setOr(int o) {orient = o;}
-    void pushUpdate(int m);
-    void resetUpdate();
-    //Utility functions
-    void printCell();
-};
-
-//Simulation
+//Simulation class
+//Holds lattice, generates and performs moves, calculates data
 class Simulation {
+    //Hardcoded simulation parameters
+    const int Q = 6;
+    const double K = 0.5;
+    const double A = 1.0;
+    const double ROTATION = 0.5;
+    const double PARTSWAP = 0.5;
+
     int Lx, Ly, Lz; //3D Lattice dimensions
     int NMAX;
     double kT; //Temperature

@@ -9,41 +9,10 @@
 #include <cmath>
 
 //Local include
-#include "Simulation.hpp"
-#include "MetropolisMC.hpp"
+#include "./Simulation.hpp"
+#include "./CellMove.hpp"
 
 using namespace std;
-
-
-/***********************
- * Cell PUBLIC FUNCTIONS
- ***********************/
-
-
-//Constructor
-Cell::Cell(int i, int o) {
-  id = i;
-  orient = o;
-  updateHistory.push_back(0);
-}
-
-//Setters
-void Cell::pushUpdate(int m) {
-  updateHistory.push_back(m);
-}
-
-void Cell::resetUpdate() {
-  updateHistory.clear();
-  updateHistory.push_back(0);
-}
-
-//Prints out Cell info (for debugging)
-void Cell::printCell() {
-  cout << "Id: " << id << " Or: " << orient << endl;
-
-  return;
-}
-
 
 /******************************
  * Simulation PRIVATE FUNCTIONS
@@ -290,7 +259,9 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
   NMAX = Lx*Ly*Lz;
   kT = T;
   cutoff = c;
-  cout << "\nINPUT DETAILS" << endl;
+
+  cout << "Hamiltonian: K=" << K << " A=" << A << endl;
+  cout << "Move probabilities: Rotation=" << ROTATION << " Particle Swap=" << PARTSWAP << endl;
   cout << "Lattice dimensions of " << Lx << "x" << Ly << "x" << Lz << endl;
   cout << "Temperature (kT) of " << kT << endl;
 
@@ -357,7 +328,6 @@ void Simulation::doSweep() {
       if ((double)rand()/(double)RAND_MAX < exp(-de)) {
         //Update orientation and history
         array[index]->setOr(q);
-        array[index]->pushUpdate(t);
 
         //Update energy
         energy += de;
@@ -374,10 +344,6 @@ void Simulation::doSweep() {
       if ((double)rand()/(double)RAND_MAX < exp(-de)) {
         //Swap cells
         swapIdOr(array[index1], array[index2]);
-
-        //Update history
-        array[index1]->pushUpdate(t);
-        array[index2]->pushUpdate(t);
 
         //Update energy
         energy += de;
