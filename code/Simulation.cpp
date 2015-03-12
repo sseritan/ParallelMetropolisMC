@@ -8,11 +8,15 @@
 #include <chrono>
 #include <cmath>
 
+//Parallel includes
+//#include "tbb/flow_graph.h"
+
 //Local include
 #include "./Simulation.hpp"
 #include "./CellMove.hpp"
 
 using namespace std;
+using namespace tbb::flow;
 
 /******************************
  * Simulation PRIVATE FUNCTIONS
@@ -86,6 +90,37 @@ void Simulation::performMove(Move* m) {
   }
 }
 
+void Simulation::genDepGraph(Move* m, int b, graph& g, broadcast_node<continue_msg>& s) {
+  //Temporary move array to keep track of which move was used
+  int moveDep [b];
+  //TODO: Use parallel_for
+  for (int i = 0; i < b; i++) {
+    moveDep[i] = 0;
+  }
+
+  //Generate all moves as graph nodes
+  continue_node<continue_msg>* nodes;
+
+  for (int i = 0; i < b; i++) {
+    //Make continue node for the move
+    continue_node<continue_msg> m(g, moveBody(m[i]));
+
+    //Make correct connections
+    //Make a list of affected nodes by this move
+    int affected [7] = {i, step3d(i, 0, -1), step3d(i, 0, 1), step3d(i, 1, -1), step3d(i, 1, 1), step3d(i, 2, -1), step3d(i, 2, 1)};
+    int dep = 0;
+    //Run through array of affected nodes and check for dependency
+    for (int j = 0; j < 7; j++) {
+      if (affected[j]) {
+        //Dependency
+      }
+
+    }
+  }
+
+  return;
+}
+
 //Calculate theta (M=26)
 //From V. Argawal and B. Peters, J. Chem. Phys. 140, 084111
 double* Simulation::calctheta() {
@@ -93,7 +128,7 @@ double* Simulation::calctheta() {
   double* theta = new double [NMAX];
 
   //Run through and calculate for every lattice position
-  //TODO: parallel_for
+  //TODO: parallel_for (blocks?)
   for (int i = 0; i < NMAX; i++) {
     theta[i] = 0.5;
 
@@ -139,7 +174,7 @@ double* Simulation::calcTheta() {
   //Get theta
   double* theta = calctheta();
 
-  //TODO: parallel_for
+  //TODO: parallel_for (blocks?)
   for (int i = 0; i < NMAX; i++) {
     Theta[i] = 0.0;
 
@@ -344,8 +379,14 @@ Simulation::~Simulation() {
 
 //Function to evolve simulation by one sweep
 void Simulation::doSweep() {
-  for (int t = 1; t <= NMAX; t += 50) {
+  //Do sweep in blocks to try and have nicer dependency graphs
+  int block = 50;
+  if (NMAX%block != 0) {
+    cout << "WARNING: NMAX not perfectly divisble by current block size " << block << ". Sweep will be incorrect size" << endl;
+  }
 
+  //Do moves in block chunks
+  for (int t = 1; t <= NMAX; t += 50) {
     //Generate 50 moves into array
     //TODO: Use parallel_for here
     Move* moves [50];
@@ -357,11 +398,42 @@ void Simulation::doSweep() {
       moves[i] = new Move(i, type, pos, param);
     }
 
-    //Perform moves (Currently serial)
-    //TODO: Build dependency graph in serial, let tbb parallelize
-    for (int i = 0; i < 50; i++) {
-      performMove(moves[i]);
+    //Create data dependency graph
+    graph g;
+    broadcast_node start(g); //Starter node
+
+    //Temporary move array to keep track of which move was used
+    int moveDep [b];
+    //TODO: Use parallel_for
+    for (int i = 0; i < b; i++) {
+      moveDep[i] = 0;
     }
+
+    //Keep pointers to move nodes
+    continue_node<continue_msg>* nodes [50];
+
+    for (int i = 0; i < b; i++) {
+      //Make continue node for the move
+      nodes[i] = continue_node(g, moveBody(m[i]));
+
+      //Make correct connections
+      //Make a list of affected nodes by this move
+      int affected [7] = {i, step3d(i, 0, -1), step3d(i, 0, 1), step3d(i, 1, -1), step3d(i, 1, 1), step3d(i, 2, -1), step3d(i, 2, 1)};
+      int dep = 0;
+      //Run through array of affected nodes and check for dependency
+      for (int j = 0; j < 7; j++) {
+        if (affected[j]) {
+          //Dependency
+        }
+      }
+    }
+    graph* g = genDepGraph(moves, 50, start);
+
+    //Start moves performing in parallel (tbb schedules)
+    start.try_put(continue_msg());
+
+    //Wait for parallel execution to finish, allows starter proc to help with moves
+    g.wait_for_all();
 
     //Memory Management
     //TODO: Use parallel_for here

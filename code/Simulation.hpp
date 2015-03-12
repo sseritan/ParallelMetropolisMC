@@ -7,6 +7,8 @@
 #ifndef _SIMULATION_HPP_
 #define _SIMULATION_HPP_
 
+#include "tbb/flow_graph.h"
+
 #include "./CellMove.hpp"
 
 //Simulation class
@@ -32,7 +34,9 @@ class Simulation {
     //Energy functions
     double rotChange(int pos, int q);
     double swapChange(int pos1, int pos2);
+    //Move functions
     void performMove(Move* m);
+    void genDepGraph(Move* m, int b, tbb::flow::graph& g, tbb::flow::broadcast_node<tbb::flow::continue_msg>& s);
     //Data functions
     double* calctheta();
     double* calcTheta();
@@ -47,6 +51,20 @@ class Simulation {
     void swapIdOr(Cell* c1, Cell* c2);
     //Utility functions
     int step3d(int index, int dir, int step);
+
+    //Move performing struct for dependency graph nodes
+    struct moveBody {
+      //Move handle
+      Move* move;
+
+      //Necessary copy constructor
+      moveBody(Move* m) : move(m) {}
+
+      //Function body
+      void operator() (continue_msg) {
+        performMove(move);
+      }
+    };
 
     //Friend for testing
     friend class SimTest;
