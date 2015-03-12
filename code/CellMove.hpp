@@ -6,24 +6,19 @@
 #ifndef _CELL_MOVE_HPP_
 #define _CELL_MOVE_HPP_
 
-#include "tbb/concurrent_vector.h"
-
 //Cell class
 //Store id, orientation, and update history
 class Cell {
     int id, orient; //Identity and orientation
-    tbb::concurrent_vector<int> moves; //Keeps track of which moves affect the cell
 
   public:
     Cell(int i, int o) : id(i), orient(o) {};
     //Getters
     int getId() {return id;}
     int getOr() {return orient;}
-    int checkMove() {return moves[0];}
     //Setters
     void setId(int i) {id = i;}
     void setOr(int o) {orient = o;}
-    void pushMove(int m) {moves.push_back(m);}
     //Utility functions
     void printCell() {std::cout << "Id " << id << " Or " << orient << std::endl;}
 };
