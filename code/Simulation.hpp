@@ -32,6 +32,7 @@ class Simulation {
     //Energy functions
     double rotChange(int pos, int q);
     double swapChange(int pos1, int pos2);
+    void performMove(Move* m);
     //Data functions
     double* calctheta();
     double* calcTheta();

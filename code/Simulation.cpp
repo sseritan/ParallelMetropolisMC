@@ -58,6 +58,34 @@ double Simulation::swapChange(int pos1, int pos2) {
   return de;
 }
 
+void Simulation::performMove(Move* m) {
+  if (m->getType() == 0) {
+    //Get energy change associated with rotation
+    double de = rotChange(m->getPos(), m->getPar())/kT;
+
+    //Check acceptance
+    if ((double)rand()/(double)RAND_MAX < exp(-de)) {
+      //Update orientation and history
+      array[m->getPos()]->setOr(m->getPar());
+
+      //Update energy
+      energy += de;
+    }
+  } else if (m->getType() == 1) {
+    //Calculate energy change associated with swap
+    double de = swapChange(m->getPos(), m->getPar())/kT;
+
+    //Check acceptance
+    if ((double)rand()/(double)RAND_MAX < exp(-de)) {
+      //Swap cells
+      swapIdOr(array[m->getPos()], array[m->getPar()]);
+
+      //Update energy
+      energy += de;
+    }
+  }
+}
+
 //Calculate theta (M=26)
 //From V. Argawal and B. Peters, J. Chem. Phys. 140, 084111
 double* Simulation::calctheta() {
@@ -311,43 +339,26 @@ Simulation::~Simulation() {
 
 //Function to evolve simulation by one sweep
 void Simulation::doSweep() {
-  for (int t = 1; t <= NMAX; t++) {
-    double m = (double)rand()/(double)RAND_MAX;
-    if (m < ROTATION) {
-      //Rotation move
-      //Pick a random location
-      int index = rand()%(NMAX);
+  for (int t = 1; t <= NMAX; t += 50) {
 
-      //Pick random orientation
-      int q = rand()%6 + 1;
+    //Generate 50 moves into array
+    Move* moves [50];
+    for (int i = 0; i < 50; i++) {
+      //Decide rotation (0) or swap (1)
+      int type = (((double)rand()/(double)RAND_MAX < ROTATION) ? 0 : 1);
+      int pos = rand()%NMAX;
+      int param = (type ? rand()%NMAX : rand()%6 + 1); //New orient if rot, 2nd lattice position if swap
+      moves[i] = new Move(i, type, pos, param);
+    }
 
-      //Calculate energy change associated with rotation
-      double de = rotChange(index, q)/kT;
+    //Perform moves
+    for (int i = 0; i < 50; i++) {
+      performMove(moves[i]);
+    }
 
-      //Check acceptance
-      if ((double)rand()/(double)RAND_MAX < exp(-de)) {
-        //Update orientation and history
-        array[index]->setOr(q);
-
-        //Update energy
-        energy += de;
-      }
-    } else {
-      //Particle swap move
-      int index1 = rand()%(NMAX);
-      int index2 = rand()%(NMAX);
-
-      //Calculate energy change associated with swap
-      double de = swapChange(index1, index2)/kT;
-
-      //Check acceptance
-      if ((double)rand()/(double)RAND_MAX < exp(-de)) {
-        //Swap cells
-        swapIdOr(array[index1], array[index2]);
-
-        //Update energy
-        energy += de;
-      }
+    //Memory Management
+    for (int i = 0; i < 50; i++) {
+      delete moves[i];
     }
   }
 }
