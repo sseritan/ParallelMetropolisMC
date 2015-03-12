@@ -93,6 +93,7 @@ double* Simulation::calctheta() {
   double* theta = new double [NMAX];
 
   //Run through and calculate for every lattice position
+  //TODO: parallel_for
   for (int i = 0; i < NMAX; i++) {
     theta[i] = 0.5;
 
@@ -138,6 +139,7 @@ double* Simulation::calcTheta() {
   //Get theta
   double* theta = calctheta();
 
+  //TODO: parallel_for
   for (int i = 0; i < NMAX; i++) {
     Theta[i] = 0.0;
 
@@ -302,10 +304,12 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
   cout << "Using Theta cutoff value of " << cutoff << endl;
 
   //Set species 1
+  //TODO: parallel_for
   for (int i = 0; i < threshold; i++) {
     array[i] = new Cell(1, 1);
   }
   //Set species 2
+  //TODO: parallel_for
   for (int i = threshold; i < NMAX; i++) {
     array[i] = new Cell(2, 1);
   }
@@ -316,6 +320,7 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
   srand(seed);
 
   //Initialize energy of the system
+  //TODO: Parallelize with atomic<double>?
   energy = 0.0;
   for (int i = 0; i < NMAX; i++) {
     //Calculate pairwise energy with forward pairs in each direction
@@ -342,6 +347,7 @@ void Simulation::doSweep() {
   for (int t = 1; t <= NMAX; t += 50) {
 
     //Generate 50 moves into array
+    //TODO: Use parallel_for here
     Move* moves [50];
     for (int i = 0; i < 50; i++) {
       //Decide rotation (0) or swap (1)
@@ -351,12 +357,14 @@ void Simulation::doSweep() {
       moves[i] = new Move(i, type, pos, param);
     }
 
-    //Perform moves
+    //Perform moves (Currently serial)
+    //TODO: Build dependency graph in serial, let tbb parallelize
     for (int i = 0; i < 50; i++) {
       performMove(moves[i]);
     }
 
     //Memory Management
+    //TODO: Use parallel_for here
     for (int i = 0; i < 50; i++) {
       delete moves[i];
     }
@@ -377,6 +385,7 @@ double* Simulation::calcThetaHistogram() {
 
   double* Theta = calcTheta();
 
+  //TODO: Parallelize with atomic<double>?
   for (int i = 0; i < NMAX; i++) {
     //Get index in histogram
     int index = floorf(Theta[i]*100);
@@ -387,6 +396,7 @@ double* Simulation::calcThetaHistogram() {
   }
 
   //Normalize
+  //TODO: parallel_for
   for (int i = 0; i < 100; i++) {
     h[i] /= (double)NMAX;
   }
@@ -403,6 +413,7 @@ double* Simulation::calcX1() {
 
   double* Theta = calcTheta();
 
+  //TODO: Parallelize with atomic<int>?
   for (int i = 0; i < NMAX; i++) {
     //Decide if in 1-rich or 2-rich phase
     if (Theta[i] >= cutoff) {
