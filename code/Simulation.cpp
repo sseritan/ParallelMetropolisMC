@@ -380,6 +380,7 @@ Simulation::~Simulation() {
   for (int i = 0; i < NMAX; i++) {
     delete array[i];
   }
+  delete[] locks;
   delete[] array;
 }
 

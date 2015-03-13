@@ -34,8 +34,6 @@ class Simulation {
     //Private functions
     //Locking
     void posLocks(int pos, int& even, int& odd);
-    void lock(int pos);
-    void unlock(int pos);
     //Energy functions
     double rotChange(int pos, int q);
     double swapChange(int pos1, int pos2);
