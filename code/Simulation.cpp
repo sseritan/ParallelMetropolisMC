@@ -343,8 +343,7 @@ Simulation::~Simulation() {
 //Function to evolve simulation by one sweep
 void Simulation::doSweep() {
   //TODO: Use parallel_for here
-  const int n = NMAX; //Lambda expression needs fixed size, weird work around
-  Move* moves [n];
+  Move* moves [NMAX];
   for (int i = 0; i < NMAX; i++) {
     //Decide rotation (0) or swap (1)
     int type = (((double)rand()/(double)RAND_MAX < ROTATION) ? 0 : 1);
