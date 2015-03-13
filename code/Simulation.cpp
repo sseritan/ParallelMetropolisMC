@@ -18,6 +18,16 @@ using namespace std;
  * Simulation PRIVATE FUNCTIONS
  ******************************/
 
+void Simulation::posLocks(int pos, int& even, int& odd) {
+  //Split into 3D coords
+  int x = (pos%(Lx*Ly))%Lx;
+  int y = (pos%(Lx*Ly))/Lx;
+  int z = pos/(Lx*Ly);
+
+  //lock even lock
+  even = wrap1d(x, 0, -(x&1)) + wrap1d(y, 1, -(y&1))*Lx + wrap1d(z, 2, -(z&1))*Lx*Ly;
+  odd = wrap1d(x, 0, -((x&1)^1)) + wrap1d(y, 1, -((y&1)^1))*Lx + wrap1d(z, 2, -((z&1)^1))*Lx*Ly;
+}
 
 //Calculate the energy change for a rotation move
 double Simulation::rotChange(int pos, int q) {
@@ -59,7 +69,11 @@ double Simulation::swapChange(int pos1, int pos2) {
 }
 
 void Simulation::performMove(Move* m) {
+  int l1, l2, l3, l4;
   if (m->getType() == 0) {
+    posLocks(m->getPos(), l1, l2);
+    locks[l1].lock();
+    locks[l2].lock();
     //Get energy change associated with rotation
     double de = rotChange(m->getPos(), m->getPar())/kT;
 
@@ -71,7 +85,26 @@ void Simulation::performMove(Move* m) {
       //Update energy
       energy += de;
     }
+    locks[l2].unlock();
+    locks[l1].unlock();
   } else if (m->getType() == 1) {
+    int pos1, pos2;
+    if (m->getPos() < m->getPar()) {
+      int pos1 = m->getPos();
+      int pos2 = m->getPar();
+    } else {
+      int pos1 = m->getPar();
+      int pos2 = m->getPos();
+    }
+
+    posLocks(pos1, l1, l2);
+    posLocks(pos2, l3, l4);
+
+    locks[l1].lock();
+    locks[l2].lock();
+    if (l3 != l1) locks[l3].lock();
+    if (l4 != l2) locks[l4].lock();
+
     //Calculate energy change associated with swap
     double de = swapChange(m->getPos(), m->getPar())/kT;
 
@@ -83,6 +116,11 @@ void Simulation::performMove(Move* m) {
       //Update energy
       energy += de;
     }
+
+    if (l4 != l2) locks[l4].unlock();
+    if (l3 != l1) locks[l3].unlock();
+    locks[l2].unlock();
+    locks[l1].unlock();
   }
 }
 
@@ -297,6 +335,9 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
 
   //Allocate array of Cells
   array = new Cell* [NMAX];
+
+  //Allocate even and odd locks
+  locks = new std::mutex [NMAX];
 
   //Initialize cells
   int threshold = compA*NMAX;

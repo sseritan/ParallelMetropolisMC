@@ -8,6 +8,7 @@
 #define _SIMULATION_HPP_
 
 #include "./CellMove.hpp"
+#include <mutex>
 
 //Simulation class
 //Holds lattice, generates and performs moves, calculates data
@@ -26,9 +27,15 @@ class Simulation {
     double cutoff; //Theta cutoff value for phase separation
 
     Cell** array; //1D array of Cell*
-    //std::atomic_flag* flags; //Array of flags (have atomic test and set)
+
+    //std::atomic_flag* locks; // Even and odd locks (have atomic test and set)
+    std::mutex* locks; // Even and odd locks from STL
 
     //Private functions
+    //Locking
+    void posLocks(int pos, int& even, int& odd);
+    void lock(int pos);
+    void unlock(int pos);
     //Energy functions
     double rotChange(int pos, int q);
     double swapChange(int pos1, int pos2);
