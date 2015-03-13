@@ -31,7 +31,7 @@ class Move {
     int par; //Parameter: will be new or for rotation, 2nd position if swap
 
   public:
-    Move(int ty, int ti, int p, int q);
+    Move(int ty, int ti, int p, int q) : type(ty), time(ti), pos(p), par(q) {};
     //Default destructor is ok
     //Getters
     int getType() {return type;}

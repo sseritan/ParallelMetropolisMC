@@ -21,11 +21,11 @@ class Simulation {
     const double ROTATION = 0.5;
     const double PARTSWAP = 0.5;
 
-    int Lx, Ly, Lz; //3D Lattice dimensions
-    int NMAX;
-    double kT; //Temperature
+    const int Lx, Ly, Lz; //3D Lattice dimensions
+    const int NMAX;
+    const double kT; //Temperature
+    const double cutoff; //Theta cutoff value for phase separation
     double energy; //Energy (continuously updated)
-    double cutoff; //Theta cutoff value for phase separation
 
     Cell** array; //1D array of Cell*
     //std::atomic_flag* flags; //Array of flags (have atomic test and set)
@@ -36,7 +36,6 @@ class Simulation {
     double swapChange(int pos1, int pos2);
     //Move functions
     void performMove(Move* m);
-    void genDepGraph(Move* m, int b, tbb::flow::graph& g, tbb::flow::broadcast_node<tbb::flow::continue_msg>& s);
     //Data functions
     double* calctheta();
     double* calcTheta();
@@ -51,20 +50,6 @@ class Simulation {
     void swapIdOr(Cell* c1, Cell* c2);
     //Utility functions
     int step3d(int index, int dir, int step);
-
-    //Move performing struct for dependency graph nodes
-    struct moveBody {
-      //Move handle
-      Move* move;
-
-      //Necessary copy constructor
-      moveBody(Move* m) : move(m) {}
-
-      //Function body
-      void operator() (continue_msg) {
-        performMove(move);
-      }
-    };
 
     //Friend for testing
     friend class SimTest;

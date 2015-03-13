@@ -4,7 +4,6 @@
 //
 
 #include <iostream>
-#include <vector>
 #include <chrono>
 #include <cmath>
 
@@ -88,37 +87,6 @@ void Simulation::performMove(Move* m) {
       energy += de;
     }
   }
-}
-
-void Simulation::genDepGraph(Move* m, int b, graph& g, broadcast_node<continue_msg>& s) {
-  //Temporary move array to keep track of which move was used
-  int moveDep [b];
-  //TODO: Use parallel_for
-  for (int i = 0; i < b; i++) {
-    moveDep[i] = 0;
-  }
-
-  //Generate all moves as graph nodes
-  continue_node<continue_msg>* nodes;
-
-  for (int i = 0; i < b; i++) {
-    //Make continue node for the move
-    continue_node<continue_msg> m(g, moveBody(m[i]));
-
-    //Make correct connections
-    //Make a list of affected nodes by this move
-    int affected [7] = {i, step3d(i, 0, -1), step3d(i, 0, 1), step3d(i, 1, -1), step3d(i, 1, 1), step3d(i, 2, -1), step3d(i, 2, 1)};
-    int dep = 0;
-    //Run through array of affected nodes and check for dependency
-    for (int j = 0; j < 7; j++) {
-      if (affected[j]) {
-        //Dependency
-      }
-
-    }
-  }
-
-  return;
 }
 
 //Calculate theta (M=26)
@@ -319,12 +287,7 @@ int Simulation::step3d(int index, int dir, int step) {
 
 
 //Constructor
-Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
-  Lx = x; Ly = y; Lz = z;
-  NMAX = Lx*Ly*Lz;
-  kT = T;
-  cutoff = c;
-
+Simulation::Simulation(int x, int y, int z, double T, double compA, double c) : Lx(x), Ly(y), Lz(z), NMAX(x*y*z), kT(T), cutoff(c) {
   cout << "Hamiltonian: K=" << K << " A=" << A << endl;
   cout << "Move probabilities: Rotation=" << ROTATION << " Particle Swap=" << PARTSWAP << endl;
   cout << "Lattice dimensions of " << Lx << "x" << Ly << "x" << Lz << endl;
@@ -379,67 +342,72 @@ Simulation::~Simulation() {
 
 //Function to evolve simulation by one sweep
 void Simulation::doSweep() {
-  //Do sweep in blocks to try and have nicer dependency graphs
-  int block = 50;
-  if (NMAX%block != 0) {
-    cout << "WARNING: NMAX not perfectly divisble by current block size " << block << ". Sweep will be incorrect size" << endl;
+  //TODO: Use parallel_for here
+  const int n = NMAX; //Lambda expression needs fixed size, weird work around
+  Move* moves [n];
+  for (int i = 0; i < NMAX; i++) {
+    //Decide rotation (0) or swap (1)
+    int type = (((double)rand()/(double)RAND_MAX < ROTATION) ? 0 : 1);
+    int pos = rand()%NMAX;
+    int param = (type ? rand()%NMAX : rand()%6 + 1); //New orient if rot, 2nd lattice position if swap
+    moves[i] = new Move(i, type, pos, param);
   }
 
-  //Do moves in block chunks
-  for (int t = 1; t <= NMAX; t += 50) {
-    //Generate 50 moves into array
-    //TODO: Use parallel_for here
-    Move* moves [50];
-    for (int i = 0; i < 50; i++) {
-      //Decide rotation (0) or swap (1)
-      int type = (((double)rand()/(double)RAND_MAX < ROTATION) ? 0 : 1);
-      int pos = rand()%NMAX;
-      int param = (type ? rand()%NMAX : rand()%6 + 1); //New orient if rot, 2nd lattice position if swap
-      moves[i] = new Move(i, type, pos, param);
-    }
+  //Create data dependency graph
+  graph g;
+  broadcast_node<continue_msg> start(g); //Starter node
 
-    //Create data dependency graph
-    graph g;
-    broadcast_node start(g); //Starter node
+  //Buffer of affected cells
+  int moveDep [NMAX];
+  //TODO: Use parallel_for
+  for (int i = 0; i < NMAX; i++) {
+    moveDep[i] = 0;
+  }
 
-    //Temporary move array to keep track of which move was used
-    int moveDep [b];
-    //TODO: Use parallel_for
-    for (int i = 0; i < b; i++) {
-      moveDep[i] = 0;
-    }
+  //Keep pointers to move nodes
+  continue_node<continue_msg>* nodes [NMAX];
 
-    //Keep pointers to move nodes
-    continue_node<continue_msg>* nodes [50];
+  //Must be sequential to ensure correct graph is built
+  for (int i = 0; i < NMAX; i++) {
+    Move* m = moves[i];
+    //Make continue node for the move
+    //Uses a lambda expression to have the node use performMove on moves[i]
+    nodes[i] = new continue_node<continue_msg> (g, [=](const continue_msg&) {performMove(m);} );
 
-    for (int i = 0; i < b; i++) {
-      //Make continue node for the move
-      nodes[i] = continue_node(g, moveBody(m[i]));
+    //Make a list of affected lattice positions by this move
+    //TODO: Get affected in swap
+    int pos = m->getPos();
+    int affected [7] = {pos, step3d(pos, 0, -1), step3d(pos, 0, 1), step3d(pos, 1, -1), step3d(pos, 1, 1), step3d(pos, 2, -1), step3d(pos, 2, 1)};
+    int dep = 0;
+    //Run through array of affected nodes and check for dependency
+    for (int j = 0; j < 7; j++) {
+      if (moveDep[affected[j]]) { //Dependency
+        //Increment dependency count
+        dep++;
 
-      //Make correct connections
-      //Make a list of affected nodes by this move
-      int affected [7] = {i, step3d(i, 0, -1), step3d(i, 0, 1), step3d(i, 1, -1), step3d(i, 1, 1), step3d(i, 2, -1), step3d(i, 2, 1)};
-      int dep = 0;
-      //Run through array of affected nodes and check for dependency
-      for (int j = 0; j < 7; j++) {
-        if (affected[j]) {
-          //Dependency
-        }
+        //Link dependency
+        make_edge(*nodes[moveDep[affected[j]]], *nodes[i]);
       }
+
+      //Update dependency
+      moveDep[affected[j]] = i;
     }
-    graph* g = genDepGraph(moves, 50, start);
 
-    //Start moves performing in parallel (tbb schedules)
-    start.try_put(continue_msg());
+    //If no dependencies, link to start node
+    if (!dep) make_edge(start, *nodes[i]);
+  }
 
-    //Wait for parallel execution to finish, allows starter proc to help with moves
-    g.wait_for_all();
+  //Start moves performing in parallel (tbb schedules)
+  start.try_put(continue_msg());
 
-    //Memory Management
-    //TODO: Use parallel_for here
-    for (int i = 0; i < 50; i++) {
-      delete moves[i];
-    }
+  //Wait for parallel execution to finish, allows starter proc to help with moves
+  g.wait_for_all();
+
+  //Memory Management
+  //TODO: Use parallel_for here
+  for (int i = 0; i < NMAX; i++) {
+    delete moves[i];
+    delete nodes[i];
   }
 }
 
