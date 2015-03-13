@@ -14,15 +14,16 @@ class Cell {
     int id, orient; //Identity and orientation
 
   public:
+    Cell(){};
     Cell(int i, int o) : id(i), orient(o) {};
     //Getters
-    int getId() {return id;}
-    int getOr() {return orient;}
+    int getId() const {return id;}
+    int getOr() const {return orient;}
     //Setters
     void setId(int i) {id = i;}
     void setOr(int o) {orient = o;}
     //Utility functions
-    void printCell() {std::cout << "Id " << id << " Or " << orient << std::endl;}
+    void printCell() const {std::cout << "Id " << id << " Or " << orient << std::endl;}
 };
 
 //Lightweight container to hold move info
@@ -35,9 +36,9 @@ class Move {
     Move(int ty, int p, int q) : type(ty), pos(p), par(q) {};
     //Default destructor is ok
     //Getters
-    int getType() {return type;}
-    int getPos() {return pos;}
-    int getPar() {return par;}
+    int getType() const {return type;}
+    int getPos() const {return pos;}
+    int getPar() const {return par;}
     //No setters
 };
 

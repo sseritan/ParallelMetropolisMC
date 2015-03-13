@@ -23,36 +23,36 @@ class Simulation {
     int Lx, Ly, Lz; //3D Lattice dimensions
     int NMAX;
     double kT; //Temperature
-    double energy; //Energy (continuously updated)
+    mutable double energy; //Energy (continuously updated)
     double cutoff; //Theta cutoff value for phase separation
 
-    Cell** array; //1D array of Cell*
+    mutable Cell *array; //1D array of Cell*
 
     //std::atomic_flag* locks; // Even and odd locks (have atomic test and set)
-    std::mutex* locks; // Even and odd locks from STL
-    std::mutex energy_lock;
+    std::mutex mutable *locks; // Even and odd locks from STL
+    mutable std::mutex energy_lock;
 
     //Private functions
     //Locking
-    void posLocks(int pos, int& even, int& odd);
+    void posLocks(int pos, int& even, int& odd) const;
     //Energy functions
-    double rotChange(int pos, int q);
-    double swapChange(int pos1, int pos2);
-    void performMove(Move* m);
+    double rotChange(int pos, int q) const;
+    double swapChange(int pos1, int pos2) const;
+    void performMove(Move* m) const;
     //Data functions
-    double* calctheta();
-    double* calcTheta();
+    double* calctheta() const;
+    double* calcTheta() const;
     //Periodic boundary functions
-    int wrap1d(int coord, int dir, int step);
+    int wrap1d(int coord, int dir, int step) const;
     //Cell query functions
-    double pairEnergy(int pos1, int pos2);
-    int numOfNNId(int pos, int i);
-    int numOfNNOr(int pos, int o);
-    int areNN(int pos1, int pos2);
+    double pairEnergy(int pos1, int pos2) const;
+    int numOfNNId(int pos, int i) const;
+    int numOfNNOr(int pos, int o) const;
+    int areNN(int pos1, int pos2) const;
     //Cell manipulation functions
-    void swapIdOr(Cell* c1, Cell* c2);
+    void swapIdOr(Cell& c1, Cell& c2) const;
     //Utility functions
-    int step3d(int index, int dir, int step);
+    int step3d(int index, int dir, int step) const;
 
     //Friend for testing
     friend class SimTest;
@@ -64,10 +64,10 @@ class Simulation {
     //Move functions
     void doSweep();
     //Data functions
-    double getEnergy();
-    void addToEnergy(double de);
-    double* calcThetaHistogram();
-    double* calcX1();
+    double getEnergy() const;
+    void addToEnergy(double de) const;
+    double* calcThetaHistogram() const;
+    double* calcX1() const;
 };
 
 #endif
