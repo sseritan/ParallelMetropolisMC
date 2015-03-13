@@ -30,6 +30,7 @@ class Simulation {
 
     //std::atomic_flag* locks; // Even and odd locks (have atomic test and set)
     std::mutex* locks; // Even and odd locks from STL
+    std::mutex energy_lock;
 
     //Private functions
     //Locking
@@ -64,6 +65,7 @@ class Simulation {
     void doSweep();
     //Data functions
     double getEnergy();
+    void addToEnergy(double de);
     double* calcThetaHistogram();
     double* calcX1();
 };

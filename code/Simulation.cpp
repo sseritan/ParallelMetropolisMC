@@ -83,7 +83,7 @@ void Simulation::performMove(Move* m) {
       array[m->getPos()]->setOr(m->getPar());
 
       //Update energy
-      energy += de;
+      addToEnergy(de);
     }
     locks[l2].unlock();
     locks[l1].unlock();
@@ -114,7 +114,7 @@ void Simulation::performMove(Move* m) {
       swapIdOr(array[m->getPos()], array[m->getPar()]);
 
       //Update energy
-      energy += de;
+      addToEnergy(de);
     }
 
     if (l4 != l2) locks[l4].unlock();
@@ -416,6 +416,12 @@ void Simulation::doSweep() {
 //Function to return energy
 double Simulation::getEnergy() {
   return energy;
+}
+
+void Simulation::addToEnergy(double de) {
+  energy_lock.lock();
+  energy += de;
+  energy_lock.unlock();
 }
 
 double* Simulation::calcThetaHistogram() {
