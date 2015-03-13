@@ -7,6 +7,7 @@
 #include <vector>
 #include <chrono>
 #include <cmath>
+#include <tbb/parallel_for.h>
 
 //Local include
 #include "./Simulation.hpp"
@@ -386,31 +387,15 @@ Simulation::~Simulation() {
 
 //Function to evolve simulation by one sweep
 void Simulation::doSweep() {
-  for (int t = 1; t <= NMAX; t += 50) {
-
-    //Generate 50 moves into array
-    //TODO: Use parallel_for here
-    Move* moves [50];
-    for (int i = 0; i < 50; i++) {
-      //Decide rotation (0) or swap (1)
-      int type = (((double)rand()/(double)RAND_MAX < ROTATION) ? 0 : 1);
-      int pos = rand()%NMAX;
-      int param = (type ? rand()%NMAX : rand()%6 + 1); //New orient if rot, 2nd lattice position if swap
-      moves[i] = new Move(i, type, pos, param);
-    }
-
-    //Perform moves (Currently serial)
-    //TODO: Build dependency graph in serial, let tbb parallelize
-    for (int i = 0; i < 50; i++) {
-      performMove(moves[i]);
-    }
-
-    //Memory Management
-    //TODO: Use parallel_for here
-    for (int i = 0; i < 50; i++) {
-      delete moves[i];
-    }
+  /* tbb::parallel_for(0, NMAX, [&] (int i) { */
+  for (int i = 0; i < NMAX; i++) {
+    int type = (((double)rand()/(double)RAND_MAX < ROTATION) ? 0 : 1);
+    int pos = rand()%NMAX;
+    int par = (type ? rand()%NMAX : rand()%6 + 1);
+    Move move(type, pos, par);
+    performMove(&move);
   }
+  /* }); */
 }
 
 //Function to return energy
