@@ -5,7 +5,7 @@
 
 #include <iostream>
 
-#include "./MetropolisMC.hpp"
+#include "./CellMove.hpp"
 #include "./Simulation.hpp"
 #include "./SimTest.hpp"
 
