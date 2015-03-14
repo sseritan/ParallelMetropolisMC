@@ -25,8 +25,9 @@ using namespace std;
 //Calculate the energy change for a rotation move
 double Simulation::rotChange(int pos, int q) {
   //Look at how many orientations match in old and new config
-  int o = numOfNNOr(pos, array[pos]->getOr());
+  int o = cilk_spawn numOfNNOr(pos, array[pos]->getOr());
   int n = numOfNNOr(pos, q);
+  cilk_sync;
 
   //de = -A*(n - o)
   return (double)(o - n)*A;
@@ -183,45 +184,42 @@ double Simulation::pairEnergy(int pos1, int pos2) {
 }
 
 //Check to see how many neighbors of array[pos] have id i
-//TODO: Parallelize
 int Simulation::numOfNNId(int pos, int i) {
-  int count = 0;
-
   //Run through neighbors and count matching ids
-  for (int j = 0; j < 3; j++) {
-    for (int k = -1; k <= 1; k += 2) {
-      if (array[step3d(pos, j, k)]->getId() == i) count++;
+  cilk::reducer_opadd<int> count(0);
+  cilk_for (int j = 0; j < 3; j++) {
+    cilk_for (int k = -1; k <= 1; k += 2) {
+      if (array[step3d(pos, j, k)]->getId() == i) *count += 1;
     }
   }
 
-  return count;
+  return count.get_value();
 }
 
 //Check to see how many neighbors of array[pos] have orientation o
-//TODO: Parallelize
 int Simulation::numOfNNOr(int pos, int o) {
-  int count = 0;
-
   //Run through neighbors and count matching ids
-  for (int i = 0; i < 3; i++) {
-    for (int j = -1; j <= 1; j += 2) {
-      if (array[step3d(pos, i, j)]->getOr() == o) count++;
+  cilk::reducer_opadd<int> count(0);
+  cilk_for (int i = 0; i < 3; i++) {
+    cilk_for (int j = -1; j <= 1; j += 2) {
+      if (array[step3d(pos, i, j)]->getOr() == o) *count += 1;
     }
   }
 
-  return count;
+  return count.get_value();
 }
 
 //Check to see if two indices are neighbors in 3D
-//TODO: Parallelize
 int Simulation::areNN(int pos1, int pos2) {
-  for (int i = 0; i < 3; i++) {
-    for (int j = -1; j <= 1; j+= 2) {
-      if (step3d(pos1, i, j) == pos2) return 1;
+  int nn = 0;
+
+  cilk_for (int i = 0; i < 3; i++) {
+    cilk_for (int j = -1; j <= 1; j+= 2) {
+      if (step3d(pos1, i, j) == pos2) nn = 1; //Don't care about write race
     }
   }
 
-  return 0;
+  return nn;
 }
 
 //1D periodic boundary condition
