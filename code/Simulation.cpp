@@ -10,10 +10,10 @@
 
 //Parallel includes
 #include <cilk/cilk.h>
-#include <cilk/reducer_opadd.h>
 
 //Local include
 #include "./Simulation.hpp"
+#include "./CellMove.hpp"
 
 using namespace std;
 
@@ -25,9 +25,8 @@ using namespace std;
 //Calculate the energy change for a rotation move
 double Simulation::rotChange(int pos, int q) {
   //Look at how many orientations match in old and new config
-  int o = cilk_spawn numOfNNOr(pos, array[pos]->getOr());
+  int o = numOfNNOr(pos, array[pos]->getOr());
   int n = numOfNNOr(pos, q);
-  cilk_sync;
 
   //de = -A*(n - o)
   return (double)(o - n)*A;
@@ -62,29 +61,27 @@ double Simulation::swapChange(int pos1, int pos2) {
   return de;
 }
 
-void Simulation::performMove(int type, int pos, int par) {
-  if (type == 0) {
+void Simulation::performMove(Move* m) {
+  if (m->getType() == 0) {
     //Get energy change associated with rotation
-    double de = rotChange(pos, par)/kT;
+    double de = rotChange(m->getPos(), m->getPar())/kT;
 
     //Check acceptance
     if ((double)rand()/(double)RAND_MAX < exp(-de)) {
       //Update orientation and history
-      array[pos]->setOr(par);
+      array[m->getPos()]->setOr(m->getPar());
 
       //Update energy
       energy += de;
     }
-  } else if (type == 1) {
+  } else if (m->getType() == 1) {
     //Calculate energy change associated with swap
-    double de = swapChange(pos, par)/kT;
+    double de = swapChange(m->getPos(), m->getPar())/kT;
 
     //Check acceptance
     if ((double)rand()/(double)RAND_MAX < exp(-de)) {
       //Swap cells
-      Cell* c1 = array[pos];
-      array[pos] = array[par];
-      array[par] = c1;
+      swapIdOr(array[m->getPos()], array[m->getPar()]);
 
       //Update energy
       energy += de;
@@ -173,55 +170,6 @@ double* Simulation::calcTheta() {
   return Theta;
 }
 
-//Calculate the energy between two lattice positions
-double Simulation::pairEnergy(int pos1, int pos2) {
-  double e = 0.0;
-
-  if (array[pos1]->getId() == array[pos2]->getId()) e -= K;
-  if (array[pos1]->getOr() == array[pos2]->getOr()) e -= A;
-
-  return e;
-}
-
-//Check to see how many neighbors of array[pos] have id i
-int Simulation::numOfNNId(int pos, int i) {
-  //Run through neighbors and count matching ids
-  cilk::reducer_opadd<int> count(0);
-  cilk_for (int j = 0; j < 3; j++) {
-    cilk_for (int k = -1; k <= 1; k += 2) {
-      if (array[step3d(pos, j, k)]->getId() == i) *count += 1;
-    }
-  }
-
-  return count.get_value();
-}
-
-//Check to see how many neighbors of array[pos] have orientation o
-int Simulation::numOfNNOr(int pos, int o) {
-  //Run through neighbors and count matching ids
-  cilk::reducer_opadd<int> count(0);
-  cilk_for (int i = 0; i < 3; i++) {
-    cilk_for (int j = -1; j <= 1; j += 2) {
-      if (array[step3d(pos, i, j)]->getOr() == o) *count += 1;
-    }
-  }
-
-  return count.get_value();
-}
-
-//Check to see if two indices are neighbors in 3D
-int Simulation::areNN(int pos1, int pos2) {
-  int nn = 0;
-
-  cilk_for (int i = 0; i < 3; i++) {
-    cilk_for (int j = -1; j <= 1; j+= 2) {
-      if (step3d(pos1, i, j) == pos2) nn = 1; //Don't care about write race
-    }
-  }
-
-  return nn;
-}
-
 //1D periodic boundary condition
 int Simulation::wrap1d(int coord, int dir, int step) {
   coord += step;
@@ -242,6 +190,73 @@ int Simulation::wrap1d(int coord, int dir, int step) {
   }
 
   return coord;
+}
+
+//Calculate the energy between two lattice positions
+double Simulation::pairEnergy(int pos1, int pos2) {
+  double e = 0.0;
+
+  if (array[pos1]->getId() == array[pos2]->getId()) e -= K;
+  if (array[pos1]->getOr() == array[pos2]->getOr()) e -= A;
+
+  return e;
+}
+
+//Check to see how many neighbors of array[pos] have id i
+//TODO: Parallelize
+int Simulation::numOfNNId(int pos, int i) {
+  int count = 0;
+
+  //Run through neighbors and count matching ids
+  for (int j = 0; j < 3; j++) {
+    for (int k = -1; k <= 1; k += 2) {
+      if (array[step3d(pos, j, k)]->getId() == i) count++;
+    }
+  }
+
+  return count;
+}
+
+//Check to see how many neighbors of array[pos] have orientation o
+//TODO: Parallelize
+int Simulation::numOfNNOr(int pos, int o) {
+  int count = 0;
+
+  //Run through neighbors and count matching ids
+  for (int i = 0; i < 3; i++) {
+    for (int j = -1; j <= 1; j += 2) {
+      if (array[step3d(pos, i, j)]->getOr() == o) count++;
+    }
+  }
+
+  return count;
+}
+
+//Check to see if two indices are neighbors in 3D
+//TODO: Parallelize
+int Simulation::areNN(int pos1, int pos2) {
+  for (int i = 0; i < 3; i++) {
+    for (int j = -1; j <= 1; j+= 2) {
+      if (step3d(pos1, i, j) == pos2) return 1;
+    }
+  }
+
+  return 0;
+}
+
+//Swaps the identity and orientation of two cells
+//This is cheaper than changing pointers and rearranging neighbor connections
+void Simulation::swapIdOr(Cell* c1, Cell* c2) {
+  //Save 1's info
+  int tempId = c1->getId(), tempOr = c1->getOr();
+
+  //Pull 2's info into 1
+  c1->setId(c2->getId()); c1->setOr(c2->getOr());
+
+  //Put 1's info into 2
+  c2->setId(tempId); c2->setOr(tempOr);
+
+  return;
 }
 
 //Step of 1D index in 3D coords, with periodic boundary conditions
@@ -290,11 +305,13 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) : 
   cout << "Using Theta cutoff value of " << cutoff << endl;
 
   //Set species 1
-  cilk_for (int i = 0; i < threshold; i++) {
+  //TODO: parallel_for
+  for (int i = 0; i < threshold; i++) {
     array[i] = new Cell(1, 1);
   }
   //Set species 2
-  cilk_for (int i = threshold; i < NMAX; i++) {
+  //TODO: parallel_for
+  for (int i = threshold; i < NMAX; i++) {
     array[i] = new Cell(2, 1);
   }
 
@@ -304,14 +321,14 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) : 
   srand(seed);
 
   //Initialize energy of the system
-  cilk::reducer_opadd<double> e(0);
-  cilk_for (int i = 0; i < NMAX; i++) {
+  //TODO: Parallelize with atomic<double>?
+  energy = 0.0;
+  for (int i = 0; i < NMAX; i++) {
     //Calculate pairwise energy with forward pairs in each direction
     for (int j = 0; j < 3; j++) {
-      *e += pairEnergy(i, step3d(i, j, 1));
+      energy += pairEnergy(i, step3d(i, j, 1));
     }
   }
-  energy = e.get_value();
 
   cout << "Initial energy: " << energy/kT << endl;
   cout << endl;
@@ -328,16 +345,27 @@ Simulation::~Simulation() {
 
 //Function to evolve simulation by one sweep
 void Simulation::doSweep() {
-  //For micro_cilk, moves are done sequentially but internally parallelized
-  //It may be possible to pipeline? Perform move and be generating next move in parallel?
+  //Generate moves into array
+  //TODO: Use parallel_for here
+  Move* moves [NMAX];
   for (int i = 0; i < NMAX; i++) {
-    //Generate move
+    //Decide rotation (0) or swap (1)
     int type = (((double)rand()/(double)RAND_MAX < ROTATION) ? 0 : 1);
     int pos = rand()%NMAX;
     int param = (type ? rand()%NMAX : rand()%6 + 1); //New orient if rot, 2nd lattice position if swap
+    moves[i] = new Move(type, pos, param);
+  }
 
-    //Perform the move
-    performMove(type, pos, param);
+  //Run through moves and perform them
+  //For micro_cilk, moves are done sequentially but internally parallelized
+  for (int i = 0; i < NMAX; i++) {
+    performMove(moves[i]);
+  }
+
+  //Memory Management
+  //TODO: Use parallel_for here
+  for (int i = 0; i < 50; i++) {
+    delete moves[i];
   }
 }
 

@@ -7,33 +7,17 @@
 #ifndef _SIMULATION_HPP_
 #define _SIMULATION_HPP_
 
-//Cell class
-//Store id, orientation, and update history
-//TODO: Move away from Cell?
-class Cell {
-    int id, orient; //Identity and orientation
-
-  public:
-    Cell(int i, int o) : id(i), orient(o) {};
-    //Getters
-    int getId() {return id;}
-    int getOr() {return orient;}
-    //Setters
-    void setId(int i) {id = i;}
-    void setOr(int o) {orient = o;}
-    //Utility functions
-    void printCell() {std::cout << "Id " << id << " Or " << orient << std::endl;}
-};
+#include "./CellMove.hpp"
 
 //Simulation class
 //Holds lattice, generates and performs moves, calculates data
 class Simulation {
     //Hardcoded simulation parameters
-    static const int Q = 6;
-    static const double K = 0.5;
-    static const double A = 1.0;
-    static const double ROTATION = 0.5;
-    static const double PARTSWAP = 0.5;
+    const int Q = 6;
+    const double K = 0.5;
+    const double A = 1.0;
+    const double ROTATION = 0.5;
+    const double PARTSWAP = 0.5;
 
     //Inputted simulation parameters
     const int Lx, Ly, Lz; //3D Lattice dimensions
@@ -44,23 +28,27 @@ class Simulation {
     double energy; //Energy (continuously updated)
 
     Cell** array; //1D array of Cell*
+    //std::atomic_flag* flags; //Array of flags (have atomic test and set)
 
     //Private functions
     //Energy functions
     double rotChange(int pos, int q);
     double swapChange(int pos1, int pos2);
     //Move functions
-    void performMove(int type, int pos, int par);
+    void performMove(Move* m);
     //Data functions
     double* calctheta();
     double* calcTheta();
+    //Periodic boundary functions
+    int wrap1d(int coord, int dir, int step);
     //Cell query functions
     double pairEnergy(int pos1, int pos2);
     int numOfNNId(int pos, int i);
     int numOfNNOr(int pos, int o);
     int areNN(int pos1, int pos2);
+    //Cell manipulation functions
+    void swapIdOr(Cell* c1, Cell* c2);
     //Utility functions
-    int wrap1d(int coord, int dir, int step);
     int step3d(int index, int dir, int step);
 
     //Friend for testing
