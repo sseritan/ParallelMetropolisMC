@@ -5,7 +5,6 @@
 
 #include <iostream>
 
-#include "./MetropolisMC.hpp"
 #include "./Simulation.hpp"
 #include "./SimTest.hpp"
 
@@ -19,42 +18,42 @@ SimTest::SimTest() : Simulation(4, 4, 4, 1.0, 1.0, 1.0) {
   //1 1 1 2  1 1 2 1  1 2 2 2  1 1 2 1
   //2 1 2 1  1 2 1 1  2 1 2 1  1 2 1 1
   //2 1 1 2  1 1 1 1  1 2 2 1  2 1 1 1
-  array[3 + 1*Lx + 0*Lx*Ly]->setId(2); array[3 + 1*Lx + 0*Lx*Ly]->setOr(2);
-  array[0 + 2*Lx + 0*Lx*Ly]->setId(2); array[0 + 2*Lx + 0*Lx*Ly]->setOr(2);
-  array[2 + 2*Lx + 0*Lx*Ly]->setId(2); array[2 + 2*Lx + 0*Lx*Ly]->setOr(2);
-  array[0 + 3*Lx + 0*Lx*Ly]->setId(2); array[0 + 3*Lx + 0*Lx*Ly]->setOr(2);
-  array[3 + 3*Lx + 0*Lx*Ly]->setId(2); array[3 + 3*Lx + 0*Lx*Ly]->setOr(2);
+  array[3 + 1*Lx + 0*Lx*Ly] = 22;
+  array[0 + 2*Lx + 0*Lx*Ly] = 22;
+  array[2 + 2*Lx + 0*Lx*Ly] = 22;
+  array[0 + 3*Lx + 0*Lx*Ly] = 22;
+  array[3 + 3*Lx + 0*Lx*Ly] = 22;
 
-  array[2 + 0*Lx + 1*Lx*Ly]->setId(2); array[2 + 0*Lx + 1*Lx*Ly]->setOr(2);
-  array[2 + 1*Lx + 1*Lx*Ly]->setId(2); array[2 + 1*Lx + 1*Lx*Ly]->setOr(2);
-  array[1 + 2*Lx + 1*Lx*Ly]->setId(2); array[1 + 2*Lx + 1*Lx*Ly]->setOr(2);
+  array[2 + 0*Lx + 1*Lx*Ly] = 22;
+  array[2 + 1*Lx + 1*Lx*Ly] = 22;
+  array[1 + 2*Lx + 1*Lx*Ly] = 22;
 
-  array[1 + 0*Lx + 2*Lx*Ly]->setId(2); array[1 + 0*Lx + 2*Lx*Ly]->setOr(2);
-  array[2 + 0*Lx + 2*Lx*Ly]->setId(2); array[2 + 0*Lx + 2*Lx*Ly]->setOr(2);
-  array[3 + 0*Lx + 2*Lx*Ly]->setId(2); array[3 + 0*Lx + 2*Lx*Ly]->setOr(2);
-  array[1 + 1*Lx + 2*Lx*Ly]->setId(2); array[1 + 1*Lx + 2*Lx*Ly]->setOr(2);
-  array[2 + 1*Lx + 2*Lx*Ly]->setId(2); array[2 + 1*Lx + 2*Lx*Ly]->setOr(2);
-  array[3 + 1*Lx + 2*Lx*Ly]->setId(2); array[3 + 1*Lx + 2*Lx*Ly]->setOr(2);
-  array[0 + 2*Lx + 2*Lx*Ly]->setId(2); array[0 + 2*Lx + 2*Lx*Ly]->setOr(2);
-  array[2 + 2*Lx + 2*Lx*Ly]->setId(2); array[2 + 2*Lx + 2*Lx*Ly]->setOr(2);
-  array[1 + 3*Lx + 2*Lx*Ly]->setId(2); array[1 + 3*Lx + 2*Lx*Ly]->setOr(2);
-  array[2 + 3*Lx + 2*Lx*Ly]->setId(2); array[2 + 3*Lx + 2*Lx*Ly]->setOr(2);
+  array[1 + 0*Lx + 2*Lx*Ly] = 22;
+  array[2 + 0*Lx + 2*Lx*Ly] = 22;
+  array[3 + 0*Lx + 2*Lx*Ly] = 22;
+  array[1 + 1*Lx + 2*Lx*Ly] = 22;
+  array[2 + 1*Lx + 2*Lx*Ly] = 22;
+  array[3 + 1*Lx + 2*Lx*Ly] = 22;
+  array[0 + 2*Lx + 2*Lx*Ly] = 22;
+  array[2 + 2*Lx + 2*Lx*Ly] = 22;
+  array[1 + 3*Lx + 2*Lx*Ly] = 22;
+  array[2 + 3*Lx + 2*Lx*Ly] = 22;
 
-  array[2 + 0*Lx + 3*Lx*Ly]->setId(2); array[2 + 0*Lx + 3*Lx*Ly]->setOr(2);
-  array[2 + 1*Lx + 3*Lx*Ly]->setId(2); array[2 + 1*Lx + 3*Lx*Ly]->setOr(2);
-  array[1 + 2*Lx + 3*Lx*Ly]->setId(2); array[1 + 2*Lx + 3*Lx*Ly]->setOr(2);
-  array[0 + 3*Lx + 3*Lx*Ly]->setId(2); array[0 + 3*Lx + 3*Lx*Ly]->setOr(2);
+  array[2 + 0*Lx + 3*Lx*Ly] = 22;
+  array[2 + 1*Lx + 3*Lx*Ly] = 22;
+  array[1 + 2*Lx + 3*Lx*Ly] = 22;
+  array[0 + 3*Lx + 3*Lx*Ly] = 22;
 
   //Print out array just in case
-  /*for (int k = 0; k < 4; k++) {
+  for (int k = 0; k < 4; k++) {
     for (int j = 0; j < 4; j++) {
       for (int i = 0; i < 4; i++) {
-        cout << array[i+ Lx*j + Lx*Ly*k]->getId() << array[i+ Lx*j + Lx*Ly*k]->getOr() << " ";
+        cout << array[i+ Lx*j + Lx*Ly*k] << " ";
       }
       cout << endl;
     }
     cout << endl;
-  }*/
+  }
 
   //Initialize energies
   energy = 0.0;

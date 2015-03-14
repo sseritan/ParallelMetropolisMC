@@ -25,7 +25,7 @@ using namespace std;
 //Calculate the energy change for a rotation move
 double Simulation::rotChange(int pos, int q) {
   //Look at how many orientations match in old and new config
-  int o = numOfNNOr(pos, array[pos]->getOr());
+  int o = numOfNNOr(pos, array[pos]%10);
   int n = numOfNNOr(pos, q);
 
   //de = -A*(n - o)
@@ -35,14 +35,13 @@ double Simulation::rotChange(int pos, int q) {
 //Calculate the energy change for a swap move
 double Simulation::swapChange(int pos1, int pos2) {
   //Get id and orientation info
-  int i1 = array[pos1]->getId(), i2 = array[pos2]->getId();
-  int o1 = array[pos1]->getOr(), o2 = array[pos2]->getOr();
+  int c1 = array[pos1], c2 = array[pos2];
 
   //Calculate difference in id matches
-  int did = (numOfNNId(pos1, i2) + numOfNNId(pos2, i1)) - (numOfNNId(pos1, i1) + numOfNNId(pos2, i2));
+  int did = (numOfNNId(pos1, c2/10) + numOfNNId(pos2, c1/10)) - (numOfNNId(pos1, c1/10) + numOfNNId(pos2, c2/10));
 
   //Calculate difference in orientation matches
-  int dor = (numOfNNOr(pos1, o2) + numOfNNOr(pos2, o1)) - (numOfNNOr(pos1, o1) + numOfNNOr(pos2, o2));
+  int dor = (numOfNNOr(pos1, c2%10) + numOfNNOr(pos2, c1%10)) - (numOfNNOr(pos1, c1%10) + numOfNNOr(pos2, c2%10));
 
   //de = -K((n_id1 + n_id2) - (o_id1 + o_id2)) - A((n_or1 + n_or2) - (o_or1 + o_or2))
   double de = -K*(double)did - A*(double)dor;
@@ -50,10 +49,10 @@ double Simulation::swapChange(int pos1, int pos2) {
   //If the two are neighbors and are diff id or orient, need to subtract an overcount
   //This is because the environment was not actually updated
   if (areNN(pos1, pos2)) {
-    if (i1 != i2) {
+    if (c1/10 != c2/10) {
       de += 2*K;
     }
-    if (o1 != o2) {
+    if (c1%10 != c2%10) {
       de += 2*A;
     }
   }
@@ -69,7 +68,8 @@ void Simulation::performMove(Move* m) {
     //Check acceptance
     if ((double)rand()/(double)RAND_MAX < exp(-de)) {
       //Update orientation and history
-      array[m->getPos()]->setOr(m->getPar());
+      int curr = array[m->getPos()]%10;
+      array[m->getPos()] += m->getPar() - curr;
 
       //Update energy
       energy += de;
@@ -81,7 +81,9 @@ void Simulation::performMove(Move* m) {
     //Check acceptance
     if ((double)rand()/(double)RAND_MAX < exp(-de)) {
       //Swap cells
-      swapIdOr(array[m->getPos()], array[m->getPar()]);
+      int temp = array[m->getPos()];
+      array[m->getPos()] = array[m->getPar()];
+      array[m->getPar()] = temp;
 
       //Update energy
       energy += de;
@@ -106,7 +108,7 @@ double* Simulation::calctheta() {
     int z = i/(Lx*Ly);
 
     //Run through neighbors (3x3x3 cube)
-    int id = array[i]->getId();
+    int id = array[i]/10;
     for (int a = -1; a < 2; a++) {
       for (int b = -1; b < 2; b++) {
         for (int c = -1; c < 2; c++) {
@@ -114,7 +116,7 @@ double* Simulation::calctheta() {
           int index = wrap1d(x, 0, a) + wrap1d(y, 1, b)*Lx + wrap1d(z, 2, c)*Lx*Ly;
 
           //Increase theta if id match
-          if (id == array[index]->getId()) {
+          if (id == array[index]/10) {
             theta[i] += 1.0/52.0;
           }
         }
@@ -170,6 +172,55 @@ double* Simulation::calcTheta() {
   return Theta;
 }
 
+//Calculate the energy between two lattice positions
+double Simulation::pairEnergy(int pos1, int pos2) {
+  double e = 0.0;
+
+  if (array[pos1]/10 == array[pos2]/10) e -= K;
+  if (array[pos1]%10 == array[pos2]%10) e -= A;
+
+  return e;
+}
+
+//Check to see how many neighbors of array[pos] have id i
+int Simulation::numOfNNId(int pos, int i) {
+  int count = 0;
+
+  //Run through neighbors and count matching ids
+  for (int j = 0; j < 3; j++) {
+    for (int k = -1; k <= 1; k += 2) {
+      if (array[step3d(pos, j, k)]/10 == i) count++;
+    }
+  }
+
+  return count;
+}
+
+//Check to see how many neighbors of array[pos] have orientation o
+int Simulation::numOfNNOr(int pos, int o) {
+  int count = 0;
+
+  //Run through neighbors and count matching ids
+  for (int i = 0; i < 3; i++) {
+    for (int j = -1; j <= 1; j += 2) {
+      if (array[step3d(pos, i, j)]%10 == o) count++;
+    }
+  }
+
+  return count;
+}
+
+//Check to see if two indices are neighbors in 3D
+int Simulation::areNN(int pos1, int pos2) {
+  for (int i = 0; i < 3; i++) {
+    for (int j = -1; j <= 1; j+= 2) {
+      if (step3d(pos1, i, j) == pos2) return 1;
+    }
+  }
+
+  return 0;
+}
+
 //1D periodic boundary condition
 int Simulation::wrap1d(int coord, int dir, int step) {
   coord += step;
@@ -190,73 +241,6 @@ int Simulation::wrap1d(int coord, int dir, int step) {
   }
 
   return coord;
-}
-
-//Calculate the energy between two lattice positions
-double Simulation::pairEnergy(int pos1, int pos2) {
-  double e = 0.0;
-
-  if (array[pos1]->getId() == array[pos2]->getId()) e -= K;
-  if (array[pos1]->getOr() == array[pos2]->getOr()) e -= A;
-
-  return e;
-}
-
-//Check to see how many neighbors of array[pos] have id i
-//TODO: Parallelize
-int Simulation::numOfNNId(int pos, int i) {
-  int count = 0;
-
-  //Run through neighbors and count matching ids
-  for (int j = 0; j < 3; j++) {
-    for (int k = -1; k <= 1; k += 2) {
-      if (array[step3d(pos, j, k)]->getId() == i) count++;
-    }
-  }
-
-  return count;
-}
-
-//Check to see how many neighbors of array[pos] have orientation o
-//TODO: Parallelize
-int Simulation::numOfNNOr(int pos, int o) {
-  int count = 0;
-
-  //Run through neighbors and count matching ids
-  for (int i = 0; i < 3; i++) {
-    for (int j = -1; j <= 1; j += 2) {
-      if (array[step3d(pos, i, j)]->getOr() == o) count++;
-    }
-  }
-
-  return count;
-}
-
-//Check to see if two indices are neighbors in 3D
-//TODO: Parallelize
-int Simulation::areNN(int pos1, int pos2) {
-  for (int i = 0; i < 3; i++) {
-    for (int j = -1; j <= 1; j+= 2) {
-      if (step3d(pos1, i, j) == pos2) return 1;
-    }
-  }
-
-  return 0;
-}
-
-//Swaps the identity and orientation of two cells
-//This is cheaper than changing pointers and rearranging neighbor connections
-void Simulation::swapIdOr(Cell* c1, Cell* c2) {
-  //Save 1's info
-  int tempId = c1->getId(), tempOr = c1->getOr();
-
-  //Pull 2's info into 1
-  c1->setId(c2->getId()); c1->setOr(c2->getOr());
-
-  //Put 1's info into 2
-  c2->setId(tempId); c2->setOr(tempOr);
-
-  return;
 }
 
 //Step of 1D index in 3D coords, with periodic boundary conditions
@@ -296,8 +280,8 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) : 
   cout << "Lattice dimensions of " << Lx << "x" << Ly << "x" << Lz << endl;
   cout << "Temperature (kT) of " << kT << endl;
 
-  //Allocate array of Cells
-  array = new Cell* [NMAX];
+  //Allocate array (10's place is id, 1's place is orientation)
+  array = new int [NMAX];
 
   //Initialize cells
   int threshold = compA*NMAX;
@@ -305,14 +289,12 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) : 
   cout << "Using Theta cutoff value of " << cutoff << endl;
 
   //Set species 1
-  //TODO: parallel_for
   for (int i = 0; i < threshold; i++) {
-    array[i] = new Cell(1, 1);
+    array[i] = 11;
   }
   //Set species 2
-  //TODO: parallel_for
   for (int i = threshold; i < NMAX; i++) {
-    array[i] = new Cell(2, 1);
+    array[i] = 21;
   }
 
   //Initialize random number generation
@@ -321,7 +303,6 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) : 
   srand(seed);
 
   //Initialize energy of the system
-  //TODO: Parallelize with atomic<double>?
   energy = 0.0;
   for (int i = 0; i < NMAX; i++) {
     //Calculate pairwise energy with forward pairs in each direction
@@ -337,18 +318,14 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) : 
 //Destructor
 Simulation::~Simulation() {
   //Memory Management
-  for (int i = 0; i < NMAX; i++) {
-    delete array[i];
-  }
   delete[] array;
 }
 
 //Function to evolve simulation by one sweep
 void Simulation::doSweep() {
   //Generate moves into array
-  //TODO: Use parallel_for here
   Move* moves [NMAX];
-  for (int i = 0; i < NMAX; i++) {
+  cilk_for (int i = 0; i < NMAX; i++) {
     //Decide rotation (0) or swap (1)
     int type = (((double)rand()/(double)RAND_MAX < ROTATION) ? 0 : 1);
     int pos = rand()%NMAX;
@@ -356,15 +333,11 @@ void Simulation::doSweep() {
     moves[i] = new Move(type, pos, param);
   }
 
-  //Run through moves and perform them
-  //For micro_cilk, moves are done sequentially but internally parallelized
+  //Run through moves and perform them (in serial bcuz overhead not worth it)
   for (int i = 0; i < NMAX; i++) {
     performMove(moves[i]);
-  }
 
-  //Memory Management
-  //TODO: Use parallel_for here
-  for (int i = 0; i < 50; i++) {
+    //Memory Managament
     delete moves[i];
   }
 }
@@ -383,7 +356,6 @@ double* Simulation::calcThetaHistogram() {
 
   double* Theta = calcTheta();
 
-  //TODO: Parallelize with atomic<double>?
   for (int i = 0; i < NMAX; i++) {
     //Get index in histogram
     int index = floorf(Theta[i]*100);
@@ -394,7 +366,6 @@ double* Simulation::calcThetaHistogram() {
   }
 
   //Normalize
-  //TODO: parallel_for
   for (int i = 0; i < 100; i++) {
     h[i] /= (double)NMAX;
   }
@@ -411,17 +382,16 @@ double* Simulation::calcX1() {
 
   double* Theta = calcTheta();
 
-  //TODO: Parallelize with atomic<int>?
   for (int i = 0; i < NMAX; i++) {
     //Decide if in 1-rich or 2-rich phase
     if (Theta[i] >= cutoff) {
       n[0]++;
-      if (array[i]->getId() == 1) {
+      if (array[i]/10 == 1) {
         n1[0]++;
       }
     } else {
       n[1]++;
-      if (array[i]->getId() == 1) {
+      if (array[i]/10 == 1) {
         n1[1]++;
       }
     }

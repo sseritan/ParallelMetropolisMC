@@ -5,7 +5,6 @@
 
 #include <iostream>
 
-#include "./MetropolisMC.hpp"
 #include "./Simulation.hpp"
 #include "./SimTest.hpp"
 
