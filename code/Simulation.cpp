@@ -10,10 +10,10 @@
 
 //Parallel includes
 #include <cilk/cilk.h>
+#include <cilk/reducer_opadd.h>
 
 //Local include
 #include "./Simulation.hpp"
-#include "./CellMove.hpp"
 
 using namespace std;
 
@@ -61,27 +61,29 @@ double Simulation::swapChange(int pos1, int pos2) {
   return de;
 }
 
-void Simulation::performMove(Move* m) {
-  if (m->getType() == 0) {
+void Simulation::performMove(int type, int pos, int par) {
+  if (type == 0) {
     //Get energy change associated with rotation
-    double de = rotChange(m->getPos(), m->getPar())/kT;
+    double de = rotChange(pos, par)/kT;
 
     //Check acceptance
     if ((double)rand()/(double)RAND_MAX < exp(-de)) {
       //Update orientation and history
-      array[m->getPos()]->setOr(m->getPar());
+      array[pos]->setOr(par);
 
       //Update energy
       energy += de;
     }
-  } else if (m->getType() == 1) {
+  } else if (type == 1) {
     //Calculate energy change associated with swap
-    double de = swapChange(m->getPos(), m->getPar())/kT;
+    double de = swapChange(pos, par)/kT;
 
     //Check acceptance
     if ((double)rand()/(double)RAND_MAX < exp(-de)) {
       //Swap cells
-      swapIdOr(array[m->getPos()], array[m->getPar()]);
+      Cell* c1 = array[pos];
+      array[pos] = array[par];
+      array[par] = c1;
 
       //Update energy
       energy += de;
@@ -170,28 +172,6 @@ double* Simulation::calcTheta() {
   return Theta;
 }
 
-//1D periodic boundary condition
-int Simulation::wrap1d(int coord, int dir, int step) {
-  coord += step;
-
-  switch(dir) {
-    case 0:
-      if (coord < 0) coord += Lx;
-      if (coord >= Lx) coord -= Lx;
-      break;
-    case 1:
-      if (coord < 0) coord += Ly;
-      if (coord >= Ly) coord -= Ly;
-      break;
-    case 2:
-      if (coord < 0) coord += Lz;
-      if (coord >= Lz) coord -= Lz;
-      break;
-  }
-
-  return coord;
-}
-
 //Calculate the energy between two lattice positions
 double Simulation::pairEnergy(int pos1, int pos2) {
   double e = 0.0;
@@ -244,19 +224,26 @@ int Simulation::areNN(int pos1, int pos2) {
   return 0;
 }
 
-//Swaps the identity and orientation of two cells
-//This is cheaper than changing pointers and rearranging neighbor connections
-void Simulation::swapIdOr(Cell* c1, Cell* c2) {
-  //Save 1's info
-  int tempId = c1->getId(), tempOr = c1->getOr();
+//1D periodic boundary condition
+int Simulation::wrap1d(int coord, int dir, int step) {
+  coord += step;
 
-  //Pull 2's info into 1
-  c1->setId(c2->getId()); c1->setOr(c2->getOr());
+  switch(dir) {
+    case 0:
+      if (coord < 0) coord += Lx;
+      if (coord >= Lx) coord -= Lx;
+      break;
+    case 1:
+      if (coord < 0) coord += Ly;
+      if (coord >= Ly) coord -= Ly;
+      break;
+    case 2:
+      if (coord < 0) coord += Lz;
+      if (coord >= Lz) coord -= Lz;
+      break;
+  }
 
-  //Put 1's info into 2
-  c2->setId(tempId); c2->setOr(tempOr);
-
-  return;
+  return coord;
 }
 
 //Step of 1D index in 3D coords, with periodic boundary conditions
@@ -305,13 +292,11 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) : 
   cout << "Using Theta cutoff value of " << cutoff << endl;
 
   //Set species 1
-  //TODO: parallel_for
-  for (int i = 0; i < threshold; i++) {
+  cilk_for (int i = 0; i < threshold; i++) {
     array[i] = new Cell(1, 1);
   }
   //Set species 2
-  //TODO: parallel_for
-  for (int i = threshold; i < NMAX; i++) {
+  cilk_for (int i = threshold; i < NMAX; i++) {
     array[i] = new Cell(2, 1);
   }
 
@@ -321,14 +306,14 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) : 
   srand(seed);
 
   //Initialize energy of the system
-  //TODO: Parallelize with atomic<double>?
-  energy = 0.0;
-  for (int i = 0; i < NMAX; i++) {
+  cilk::reducer_opadd<double> e(0);
+  cilk_for (int i = 0; i < NMAX; i++) {
     //Calculate pairwise energy with forward pairs in each direction
     for (int j = 0; j < 3; j++) {
-      energy += pairEnergy(i, step3d(i, j, 1));
+      *e += pairEnergy(i, step3d(i, j, 1));
     }
   }
+  energy = e.get_value();
 
   cout << "Initial energy: " << energy/kT << endl;
   cout << endl;
@@ -345,27 +330,16 @@ Simulation::~Simulation() {
 
 //Function to evolve simulation by one sweep
 void Simulation::doSweep() {
-  //Generate moves into array
-  //TODO: Use parallel_for here
-  Move* moves [NMAX];
+  //For micro_cilk, moves are done sequentially but internally parallelized
+  //It may be possible to pipeline? Perform move and be generating next move in parallel?
   for (int i = 0; i < NMAX; i++) {
-    //Decide rotation (0) or swap (1)
+    //Generate move
     int type = (((double)rand()/(double)RAND_MAX < ROTATION) ? 0 : 1);
     int pos = rand()%NMAX;
     int param = (type ? rand()%NMAX : rand()%6 + 1); //New orient if rot, 2nd lattice position if swap
-    moves[i] = new Move(type, pos, param);
-  }
 
-  //Run through moves and perform them
-  //For micro_cilk, moves are done sequentially but internally parallelized
-  for (int i = 0; i < NMAX; i++) {
-    performMove(moves[i]);
-  }
-
-  //Memory Management
-  //TODO: Use parallel_for here
-  for (int i = 0; i < 50; i++) {
-    delete moves[i];
+    //Perform the move
+    performMove(type, pos, param);
   }
 }
 
