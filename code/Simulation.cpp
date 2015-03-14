@@ -69,7 +69,7 @@ double Simulation::swapChange(int pos1, int pos2) const {
   return de;
 }
 
-void Simulation::performMove(Move* m) const {
+void Simulation::performMove(const Move* const m) const {
   int l1, l2, l3, l4;
   if (m->getType() == 0) {
     posLocks(m->getPos(), l1, l2);
@@ -79,7 +79,7 @@ void Simulation::performMove(Move* m) const {
     double de = rotChange(m->getPos(), m->getPar())/kT;
 
     //Check acceptance
-    if (true) {
+    if (m->getProb() < exp(-de)) {
       //Update orientation and history
       array[m->getPos()].setOr(m->getPar());
 
@@ -110,7 +110,7 @@ void Simulation::performMove(Move* m) const {
     double de = swapChange(m->getPos(), m->getPar())/kT;
 
     //Check acceptance
-    if (true) {
+    if (m->getProb() < exp(-de)) {
       //Swap cells
       swapIdOr(array[m->getPos()], array[m->getPar()]);
 
@@ -386,19 +386,20 @@ Simulation::~Simulation() {
 
 //Function to evolve simulation by one sweep
 void Simulation::doSweep() {
-  Move* moves[NMAX];
+  const Move* moves[NMAX];
   for (int i = 0; i < NMAX; i++) {
     int type = (((double)rand()/(double)RAND_MAX < ROTATION) ? 0 : 1);
     int pos = rand()%NMAX;
     int par = (type ? rand()%NMAX : rand()%6 + 1);
-    moves[i] = new Move(type, pos, par);
+    double prob = (double)rand()/(double)RAND_MAX;
+    moves[i] = new Move(type, pos, par, prob);
   }
-  /* tbb::parallel_for(0, NMAX, [&] (int i) { */
-  for (int i = 0; i < NMAX; i++) {
+  tbb::parallel_for(0, NMAX, [&] (int i) {
+  /* for (int i = 0; i < NMAX; i++) { */
     performMove(moves[i]);
     delete moves[i];
-  }
-  /* }); */
+  /* } */
+  });
 }
 
 //Function to return energy

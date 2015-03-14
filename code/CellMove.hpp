@@ -28,17 +28,26 @@ class Cell {
 
 //Lightweight container to hold move info
 class Move {
-    int type; //0 for rotation, 1 for particle swap
-    int pos; //Lattice position
-    int par; //Parameter: will be new or for rotation, 2nd position if swap
+    const int type; //0 for rotation, 1 for particle swap
+    const int pos; //Lattice position
+    const int par; //Parameter: will be new or for rotation, 2nd position if swap
+    const double prob; //a random number in [0, 1]
 
   public:
-    Move(int ty, int p, int q) : type(ty), pos(p), par(q) {};
+    Move(int ty, int p, int q, double r) : type(ty), pos(p), par(q), prob(r) {};
     //Default destructor is ok
     //Getters
     int getType() const {return type;}
     int getPos() const {return pos;}
     int getPar() const {return par;}
+    double getProb() const {return prob;}
+    void printMove() const {
+      if (type == 0) {
+        std::cout << "Rot(" << pos << ", " << par << ")" << " with prob = "  << prob << std::endl;
+      } else if (type == 1) {
+        std::cout << "Swap(" << pos << ", " << par << ")" << " with prob = "  << prob << std::endl;
+      }
+    }
     //No setters
 };
 
