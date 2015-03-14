@@ -1,5 +1,5 @@
 CC=icc
-CFLAGS=-O2 -march=native -std=c++11 -ltbb -I /opt/intel/composer_xe_2015.2.132/tbb/include
+CFLAGS=-O3 -march=native -std=c++11
 
 MC: MetropolisMC.cpp Simulation.cpp Simulation.hpp CellMove.hpp
 	$(CC) $(CFLAGS) MetropolisMC.cpp Simulation.cpp -o MC

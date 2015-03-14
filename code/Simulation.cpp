@@ -9,14 +9,13 @@
 #include <cmath>
 
 //Parallel includes
-//#include "tbb/flow_graph.h"
+#include <cilk/cilk.h>
 
 //Local include
 #include "./Simulation.hpp"
 #include "./CellMove.hpp"
 
 using namespace std;
-using namespace tbb::flow;
 
 /******************************
  * Simulation PRIVATE FUNCTIONS
@@ -88,37 +87,6 @@ void Simulation::performMove(Move* m) {
       energy += de;
     }
   }
-}
-
-void Simulation::genDepGraph(Move* m, int b, graph& g, broadcast_node<continue_msg>& s) {
-  //Temporary move array to keep track of which move was used
-  int moveDep [b];
-  //TODO: Use parallel_for
-  for (int i = 0; i < b; i++) {
-    moveDep[i] = 0;
-  }
-
-  //Generate all moves as graph nodes
-  continue_node<continue_msg>* nodes;
-
-  for (int i = 0; i < b; i++) {
-    //Make continue node for the move
-    continue_node<continue_msg> m(g, moveBody(m[i]));
-
-    //Make correct connections
-    //Make a list of affected nodes by this move
-    int affected [7] = {i, step3d(i, 0, -1), step3d(i, 0, 1), step3d(i, 1, -1), step3d(i, 1, 1), step3d(i, 2, -1), step3d(i, 2, 1)};
-    int dep = 0;
-    //Run through array of affected nodes and check for dependency
-    for (int j = 0; j < 7; j++) {
-      if (affected[j]) {
-        //Dependency
-      }
-
-    }
-  }
-
-  return;
 }
 
 //Calculate theta (M=26)
@@ -235,6 +203,7 @@ double Simulation::pairEnergy(int pos1, int pos2) {
 }
 
 //Check to see how many neighbors of array[pos] have id i
+//TODO: Parallelize
 int Simulation::numOfNNId(int pos, int i) {
   int count = 0;
 
@@ -249,6 +218,7 @@ int Simulation::numOfNNId(int pos, int i) {
 }
 
 //Check to see how many neighbors of array[pos] have orientation o
+//TODO: Parallelize
 int Simulation::numOfNNOr(int pos, int o) {
   int count = 0;
 
@@ -263,6 +233,7 @@ int Simulation::numOfNNOr(int pos, int o) {
 }
 
 //Check to see if two indices are neighbors in 3D
+//TODO: Parallelize
 int Simulation::areNN(int pos1, int pos2) {
   for (int i = 0; i < 3; i++) {
     for (int j = -1; j <= 1; j+= 2) {
@@ -319,12 +290,7 @@ int Simulation::step3d(int index, int dir, int step) {
 
 
 //Constructor
-Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
-  Lx = x; Ly = y; Lz = z;
-  NMAX = Lx*Ly*Lz;
-  kT = T;
-  cutoff = c;
-
+Simulation::Simulation(int x, int y, int z, double T, double compA, double c) : Lx(x), Ly(y), Lz(z), NMAX(x*y*z), kT(T), cutoff(c) {
   cout << "Hamiltonian: K=" << K << " A=" << A << endl;
   cout << "Move probabilities: Rotation=" << ROTATION << " Particle Swap=" << PARTSWAP << endl;
   cout << "Lattice dimensions of " << Lx << "x" << Ly << "x" << Lz << endl;
@@ -379,67 +345,27 @@ Simulation::~Simulation() {
 
 //Function to evolve simulation by one sweep
 void Simulation::doSweep() {
-  //Do sweep in blocks to try and have nicer dependency graphs
-  int block = 50;
-  if (NMAX%block != 0) {
-    cout << "WARNING: NMAX not perfectly divisble by current block size " << block << ". Sweep will be incorrect size" << endl;
+  //Generate moves into array
+  //TODO: Use parallel_for here
+  Move* moves [NMAX];
+  for (int i = 0; i < NMAX; i++) {
+    //Decide rotation (0) or swap (1)
+    int type = (((double)rand()/(double)RAND_MAX < ROTATION) ? 0 : 1);
+    int pos = rand()%NMAX;
+    int param = (type ? rand()%NMAX : rand()%6 + 1); //New orient if rot, 2nd lattice position if swap
+    moves[i] = new Move(type, pos, param);
   }
 
-  //Do moves in block chunks
-  for (int t = 1; t <= NMAX; t += 50) {
-    //Generate 50 moves into array
-    //TODO: Use parallel_for here
-    Move* moves [50];
-    for (int i = 0; i < 50; i++) {
-      //Decide rotation (0) or swap (1)
-      int type = (((double)rand()/(double)RAND_MAX < ROTATION) ? 0 : 1);
-      int pos = rand()%NMAX;
-      int param = (type ? rand()%NMAX : rand()%6 + 1); //New orient if rot, 2nd lattice position if swap
-      moves[i] = new Move(i, type, pos, param);
-    }
+  //Run through moves and perform them
+  //For micro_cilk, moves are done sequentially but internally parallelized
+  for (int i = 0; i < NMAX; i++) {
+    performMove(moves[i]);
+  }
 
-    //Create data dependency graph
-    graph g;
-    broadcast_node start(g); //Starter node
-
-    //Temporary move array to keep track of which move was used
-    int moveDep [b];
-    //TODO: Use parallel_for
-    for (int i = 0; i < b; i++) {
-      moveDep[i] = 0;
-    }
-
-    //Keep pointers to move nodes
-    continue_node<continue_msg>* nodes [50];
-
-    for (int i = 0; i < b; i++) {
-      //Make continue node for the move
-      nodes[i] = continue_node(g, moveBody(m[i]));
-
-      //Make correct connections
-      //Make a list of affected nodes by this move
-      int affected [7] = {i, step3d(i, 0, -1), step3d(i, 0, 1), step3d(i, 1, -1), step3d(i, 1, 1), step3d(i, 2, -1), step3d(i, 2, 1)};
-      int dep = 0;
-      //Run through array of affected nodes and check for dependency
-      for (int j = 0; j < 7; j++) {
-        if (affected[j]) {
-          //Dependency
-        }
-      }
-    }
-    graph* g = genDepGraph(moves, 50, start);
-
-    //Start moves performing in parallel (tbb schedules)
-    start.try_put(continue_msg());
-
-    //Wait for parallel execution to finish, allows starter proc to help with moves
-    g.wait_for_all();
-
-    //Memory Management
-    //TODO: Use parallel_for here
-    for (int i = 0; i < 50; i++) {
-      delete moves[i];
-    }
+  //Memory Management
+  //TODO: Use parallel_for here
+  for (int i = 0; i < 50; i++) {
+    delete moves[i];
   }
 }
 
