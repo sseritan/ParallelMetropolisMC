@@ -8,7 +8,8 @@
 #include <cmath>
 
 //Parallel includes
-//#include "tbb/flow_graph.h"
+#include "tbb/tbb.h"
+#include "tbb/flow_graph.h"
 
 //Local include
 #include "./Simulation.hpp"
