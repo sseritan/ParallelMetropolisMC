@@ -1,0 +1,54 @@
+Started simulation on Sun Mar 15 10:16:13 2015
+
+Hamiltonian: K=0.50 A=1.00
+Move probabilities: Rotation=0.50 Particle Swap=0.50
+Lattice dimensions of 10x10x100
+Temperature (kT) of 1.00
+Simulation seeded with 5000/10000 particles of species 1
+Using Theta cutoff value of 0.50
+Using seed 1426439773896796 for srand()
+Initial energy: -44900.00
+
+Sweep information: Equilibration=100 Data Gathering=100
+Equilibration sweep 10/100 E/kT=-43948.00
+Equilibration sweep 20/100 E/kT=-43215.00
+Equilibration sweep 30/100 E/kT=-42706.00
+Equilibration sweep 40/100 E/kT=-42390.00
+Equilibration sweep 50/100 E/kT=-41994.00
+Equilibration sweep 60/100 E/kT=-41664.00
+Equilibration sweep 70/100 E/kT=-41692.00
+Equilibration sweep 80/100 E/kT=-41661.00
+Equilibration sweep 90/100 E/kT=-41396.00
+Equilibration sweep 100/100 E/kT=-41394.00
+Theta Histogram:
+0: 0.00 1: 0.01 2: 0.02 3: 0.02 4: 0.03 5: 0.03 6: 0.03 7: 0.03 8: 0.03 9: 0.03 
+10: 0.02 11: 0.03 12: 0.02 13: 0.02 14: 0.02 15: 0.02 16: 0.01 17: 0.01 18: 0.01 
+19: 0.01 20: 0.01 21: 0.01 22: 0.01 23: 0.01 24: 0.01 25: 0.01 26: 0.00 27: 0.00 
+28: 0.00 29: 0.00 30: 0.00 31: 0.00 32: 0.00 33: 0.00 34: 0.00 35: 0.00 36: 0.00 
+37: 0.00 38: 0.00 39: 0.00 40: 0.00 41: 0.00 42: 0.00 43: 0.00 44: 0.00 45: 0.00 
+46: 0.00 47: 0.00 48: 0.00 49: 0.00 50: 0.00 51: 0.00 52: 0.00 53: 0.00 54: 0.00 
+55: 0.00 56: 0.00 57: 0.00 58: 0.00 59: 0.00 60: 0.00 61: 0.00 62: 0.00 63: 0.00 
+64: 0.00 65: 0.00 66: 0.00 67: 0.00 68: 0.00 69: 0.00 70: 0.00 71: 0.00 72: 0.00 
+73: 0.01 74: 0.01 75: 0.01 76: 0.01 77: 0.01 78: 0.01 79: 0.01 80: 0.01 81: 0.01 
+82: 0.01 83: 0.02 84: 0.02 85: 0.02 86: 0.02 87: 0.03 88: 0.03 89: 0.03 90: 0.03 
+91: 0.03 92: 0.04 93: 0.03 94: 0.03 95: 0.02 96: 0.01 97: 0.01 98: 0.01 99: 0.00 
+
+Data sweep 10/100
+Data sweep 20/100
+Data sweep 30/100
+Data sweep 40/100
+Data sweep 50/100
+Data sweep 60/100
+Data sweep 70/100
+Data sweep 80/100
+Data sweep 90/100
+Data sweep 100/100
+Average energy (E/kT): -41229.90
+X1 (1-rich): 0.87 X1 (2-rich) 0.13
+
+Initialization time (ms): 0
+Equilibrium time (ms): 352
+Data time (ms): 607
+
+Finished simulation on Sun Mar 15 10:16:14 2015
+

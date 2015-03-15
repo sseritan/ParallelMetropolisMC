@@ -1,0 +1,54 @@
+Started simulation on Sun Mar 15 10:17:13 2015
+
+Hamiltonian: K=0.50 A=1.00
+Move probabilities: Rotation=0.50 Particle Swap=0.50
+Lattice dimensions of 10x10x100
+Temperature (kT) of 1.00
+Simulation seeded with 5000/10000 particles of species 1
+Using Theta cutoff value of 0.50
+Using seed 1426439833781122 for srand()
+Initial energy: -44900.00
+
+Sweep information: Equilibration=10000 Data Gathering=10000
+Equilibration sweep 1000/10000 E/kT=-41180.00
+Equilibration sweep 2000/10000 E/kT=-41176.00
+Equilibration sweep 3000/10000 E/kT=-41166.00
+Equilibration sweep 4000/10000 E/kT=-41180.00
+Equilibration sweep 5000/10000 E/kT=-41104.00
+Equilibration sweep 6000/10000 E/kT=-41223.00
+Equilibration sweep 7000/10000 E/kT=-41337.00
+Equilibration sweep 8000/10000 E/kT=-41253.00
+Equilibration sweep 9000/10000 E/kT=-41169.00
+Equilibration sweep 10000/10000 E/kT=-41073.00
+Theta Histogram:
+0: 0.00 1: 0.01 2: 0.01 3: 0.02 4: 0.02 5: 0.03 6: 0.03 7: 0.03 8: 0.03 9: 0.03 
+10: 0.02 11: 0.03 12: 0.03 13: 0.02 14: 0.02 15: 0.02 16: 0.02 17: 0.02 18: 0.01 
+19: 0.01 20: 0.01 21: 0.01 22: 0.01 23: 0.01 24: 0.01 25: 0.01 26: 0.01 27: 0.01 
+28: 0.00 29: 0.01 30: 0.00 31: 0.00 32: 0.00 33: 0.00 34: 0.00 35: 0.00 36: 0.00 
+37: 0.00 38: 0.00 39: 0.00 40: 0.00 41: 0.00 42: 0.00 43: 0.00 44: 0.00 45: 0.00 
+46: 0.00 47: 0.00 48: 0.00 49: 0.00 50: 0.00 51: 0.00 52: 0.00 53: 0.00 54: 0.00 
+55: 0.00 56: 0.00 57: 0.00 58: 0.00 59: 0.00 60: 0.00 61: 0.00 62: 0.00 63: 0.00 
+64: 0.00 65: 0.00 66: 0.00 67: 0.00 68: 0.00 69: 0.00 70: 0.00 71: 0.00 72: 0.00 
+73: 0.00 74: 0.01 75: 0.01 76: 0.01 77: 0.01 78: 0.01 79: 0.01 80: 0.01 81: 0.01 
+82: 0.01 83: 0.01 84: 0.02 85: 0.02 86: 0.02 87: 0.02 88: 0.02 89: 0.02 90: 0.03 
+91: 0.03 92: 0.03 93: 0.03 94: 0.03 95: 0.03 96: 0.02 97: 0.02 98: 0.01 99: 0.00 
+
+Data sweep 1000/10000
+Data sweep 2000/10000
+Data sweep 3000/10000
+Data sweep 4000/10000
+Data sweep 5000/10000
+Data sweep 6000/10000
+Data sweep 7000/10000
+Data sweep 8000/10000
+Data sweep 9000/10000
+Data sweep 10000/10000
+Average energy (E/kT): -41175.19
+X1 (1-rich): 0.87 X1 (2-rich) 0.13
+
+Initialization time (ms): 0
+Equilibrium time (ms): 25515
+Data time (ms): 64989
+
+Finished simulation on Sun Mar 15 10:18:44 2015
+
