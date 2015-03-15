@@ -7,10 +7,15 @@
 #include <chrono>
 #include <cmath>
 
+//Parallel includes
+#include <tbb/concurrent_queue.h>
+#include <tbb/flow_graph.h>
+
 //Local include
 #include "./Simulation.hpp"
 
 using namespace std;
+using namespace tbb;
 
 /******************************
  * Simulation PRIVATE FUNCTIONS
@@ -322,22 +327,23 @@ Simulation::~Simulation() {
 
 //Function to evolve simulation by one sweep
 void Simulation::doSweep() {
-  //Generate moves into array
-  Move* moves [NMAX];
+  //Generate moves into concurrent_queue
+  concurrent_queue<Move*> moves;
   for (int i = 0; i < NMAX; i++) {
     //Decide rotation (0) or swap (1)
     int type = (((double)rand()/(double)RAND_MAX < ROTATION) ? 0 : 1);
     int pos = rand()%NMAX;
     int param = (type ? rand()%NMAX : rand()%6 + 1); //New orient if rot, 2nd lattice position if swap
-    moves[i] = new Move(type, pos, param);
+    moves.push(new Move(type, pos, param));
   }
 
   //Run through moves and perform them (in serial bcuz overhead not worth it)
-  for (int i = 0; i < NMAX; i++) {
-    performMove(moves[i]);
+  while (!moves.empty()) {
+    Move* m;
+    if (moves.try_pop(m)) performMove(m);
 
     //Memory Managament
-    delete moves[i];
+    delete m;
   }
 }
 

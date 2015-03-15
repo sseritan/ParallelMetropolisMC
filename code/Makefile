@@ -1,5 +1,5 @@
 CC=icc
-CFLAGS=-O3 -march=native -std=c++11
+CFLAGS=-O3 -march=native -std=c++11 -ltbb
 
 MC: MetropolisMC.cpp Simulation.cpp Simulation.hpp
 	$(CC) $(CFLAGS) MetropolisMC.cpp Simulation.cpp -o MC
