@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cmath>
 #include <tbb/parallel_for.h>
+#include <tbb/parallel_reduce.h>
 
 //Local include
 #include "./Simulation.hpp"
@@ -20,10 +21,23 @@ using namespace std;
  ******************************/
 
 void Simulation::posLocks(int pos, int& even, int& odd) const {
+  /* if (pos == 0) cout << "pos == 0" << endl; */
   //Split into 3D coords
   int x = (pos%(Lx*Ly))%Lx;
   int y = (pos%(Lx*Ly))/Lx;
   int z = pos/(Lx*Ly);
+
+  /* cout << "x: " << x << endl; */
+  /* cout << "y: " << y << endl; */
+  /* cout << "z: " << z << endl; */
+
+  /* cout << "even x: " << wrap1d(x, 0, -(x&1)) << endl; */
+  /* cout << "even y: " << wrap1d(y, 1, -(y&1)) << endl; */
+  /* cout << "even z: " << wrap1d(z, 2, -(z&1)) << endl; */
+
+  /* cout << "odd x: " << wrap1d(x, 0, -((x&1)^1)) << endl; */
+  /* cout << "odd y: " << wrap1d(y, 1, -((y&1)^1)) << endl; */
+  /* cout << "odd z: " << wrap1d(z, 2, -((z&1)^1)) << endl; */
 
   //lock even lock
   even = wrap1d(x, 0, -(x&1)) + wrap1d(y, 1, -(y&1))*Lx + wrap1d(z, 2, -(z&1))*Lx*Ly;
@@ -69,12 +83,14 @@ double Simulation::swapChange(int pos1, int pos2) const {
   return de;
 }
 
-void Simulation::performMove(const Move* const m) const {
-  int l1, l2, l3, l4;
+double Simulation::performMove(const Move* const m) const {
+  int l0, l1, l2, l3;
+  double e = 0.0;
+  /* m->printMove(); */
   if (m->getType() == 0) {
-    posLocks(m->getPos(), l1, l2);
+    posLocks(m->getPos(), l0, l1);
+    locks[l0].lock();
     locks[l1].lock();
-    locks[l2].lock();
     //Get energy change associated with rotation
     double de = rotChange(m->getPos(), m->getPar())/kT;
 
@@ -83,28 +99,32 @@ void Simulation::performMove(const Move* const m) const {
       //Update orientation and history
       array[m->getPos()].setOr(m->getPar());
 
-      //Update energy
-      addToEnergy(de);
+      //Return change in energy
+      e = de;
     }
-    locks[l2].unlock();
+
     locks[l1].unlock();
+    locks[l0].unlock();
   } else if (m->getType() == 1) {
-    int pos1, pos2;
-    if (m->getPos() < m->getPar()) {
-      int pos1 = m->getPos();
-      int pos2 = m->getPar();
-    } else {
-      int pos1 = m->getPar();
-      int pos2 = m->getPos();
+    posLocks(m->getPos(), l0, l1);
+    posLocks(m->getPar(), l2, l3);
+
+    // Lock evens first, small then large
+    if (l0 < l2) {
+      locks[l0].lock();
+      locks[l2].lock();
+    } else if (l2 < l0) {
+      locks[l2].lock();
+      locks[l0].lock();
     }
-
-    posLocks(pos1, l1, l2);
-    posLocks(pos2, l3, l4);
-
-    locks[l1].lock();
-    locks[l2].lock();
-    if (l3 != l1) locks[l3].lock();
-    if (l4 != l2) locks[l4].lock();
+    // Lock odds, small then large
+    if (l1 < l3) {
+      locks[l1].lock();
+      locks[l3].lock();
+    } else if (l3 < l1) {
+      locks[l3].lock();
+      locks[l1].lock();
+    }
 
     //Calculate energy change associated with swap
     double de = swapChange(m->getPos(), m->getPar())/kT;
@@ -114,15 +134,28 @@ void Simulation::performMove(const Move* const m) const {
       //Swap cells
       swapIdOr(array[m->getPos()], array[m->getPar()]);
 
-      //Update energy
-      addToEnergy(de);
+      //Return change in energy
+      e = de;
     }
 
-    if (l4 != l2) locks[l4].unlock();
-    if (l3 != l1) locks[l3].unlock();
-    locks[l2].unlock();
-    locks[l1].unlock();
+    // Unlock odds first, large then small
+    if (l1 < l3) {
+      locks[l3].unlock();
+      locks[l1].unlock();
+    } else if (l3 < l1) {
+      locks[l1].unlock();
+      locks[l3].unlock();
+    }
+    // Unlock evens, large then small
+    if (l0 < l2) {
+      locks[l2].unlock();
+      locks[l0].unlock();
+    } else if (l2 < l0) {
+      locks[l0].unlock();
+      locks[l2].unlock();
+    }
   }
+  return e;
 }
 
 //Calculate theta (M=26)
@@ -386,31 +419,47 @@ Simulation::~Simulation() {
 
 //Function to evolve simulation by one sweep
 void Simulation::doSweep() {
+  uniform_int_distribution<> type(0, 1);
+  uniform_int_distribution<> pos(0, NMAX-1);
+  uniform_int_distribution<> orient(1, 6);
+  uniform_real_distribution<double> prob(0, 1);
   const Move* moves[NMAX];
   for (int i = 0; i < NMAX; i++) {
-    int type = (((double)rand()/(double)RAND_MAX < ROTATION) ? 0 : 1);
-    int pos = rand()%NMAX;
-    int par = (type ? rand()%NMAX : rand()%6 + 1);
-    double prob = (double)rand()/(double)RAND_MAX;
-    moves[i] = new Move(type, pos, par, prob);
+    /* int ty = ((double) rand()/(double)RAND_MAX < ROTATION) ? 0 : 1; */
+    /* int p = rand()%NMAX; */
+    /* int q = (ty ? rand()%NMAX : rand()%6 + 1); */
+    /* double r = (double)rand()/(double)RAND_MAX; */
+    int ty = type(gen);
+    int p = pos(gen);
+    int q = (ty ? pos(gen) : orient(gen));
+    double r = prob(gen);
+    moves[i] = new Move(ty, p, q, r);
+    /* moves[i]->printMove(); */
   }
-  tbb::parallel_for(0, NMAX, [&] (int i) {
+  energy += tbb::parallel_reduce(
+      tbb::blocked_range<int>(0, NMAX),
+      0.d,
+      [&] (const tbb::blocked_range<int>& r, double init)->double {
+      for (int i=r.begin(); i!=r.end(); ++i) {
+        init += performMove(moves[i]);
+        delete moves[i];
+      }
+      return init;
+      }, [](double x, double y)->double {
+      return x + y;
+      });
+  /* double de = 0.0; */
+  /* #pragma omp parallel for reduction(+:de) */
   /* for (int i = 0; i < NMAX; i++) { */
-    performMove(moves[i]);
-    delete moves[i];
+  /*   de += performMove(moves[i]); */
+  /*   delete moves[i]; */
   /* } */
-  });
+  /* energy += de; */
 }
 
 //Function to return energy
 double Simulation::getEnergy() const {
   return energy;
-}
-
-void Simulation::addToEnergy(double de) const {
-  energy_lock.lock();
-  energy += de;
-  energy_lock.unlock();
 }
 
 double* Simulation::calcThetaHistogram() const {

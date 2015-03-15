@@ -9,6 +9,9 @@
 
 #include "./CellMove.hpp"
 #include <mutex>
+#include <random>
+
+#define CACHE_LINE_SIZE 64
 
 //Simulation class
 //Holds lattice, generates and performs moves, calculates data
@@ -20,17 +23,20 @@ class Simulation {
     const double ROTATION = 0.5;
     const double PARTSWAP = 0.5;
 
+    std::random_device rd;
+    mutable std::mt19937_64 gen;
+
     int Lx, Ly, Lz; //3D Lattice dimensions
     int NMAX;
     double kT; //Temperature
     mutable double energy; //Energy (continuously updated)
     double cutoff; //Theta cutoff value for phase separation
 
-    mutable Cell *array; //1D array of Cell*
+    /* mutable Cell *array; //1D array of Cell* */
+    alignas(CACHE_LINE_SIZE) mutable Cell *array; //1D array of Cell*
 
-    //std::atomic_flag* locks; // Even and odd locks (have atomic test and set)
-    std::mutex mutable *locks; // Even and odd locks from STL
-    mutable std::mutex energy_lock;
+    /* std::mutex mutable *locks; // Even and odd locks from STL */
+    alignas(CACHE_LINE_SIZE) mutable std::mutex *locks; // Even and odd locks from STL
 
     //Private functions
     //Locking
@@ -38,7 +44,7 @@ class Simulation {
     //Energy functions
     double rotChange(int pos, int q) const;
     double swapChange(int pos1, int pos2) const;
-    void performMove(const Move* const m) const;
+    double performMove(const Move* const m) const;
     //Data functions
     double* calctheta() const;
     double* calcTheta() const;
@@ -65,7 +71,6 @@ class Simulation {
     void doSweep();
     //Data functions
     double getEnergy() const;
-    void addToEnergy(double de) const;
     double* calcThetaHistogram() const;
     double* calcX1() const;
 };
