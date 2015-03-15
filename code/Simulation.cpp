@@ -4,16 +4,11 @@
 //
 
 #include <iostream>
-#include <vector>
 #include <chrono>
 #include <cmath>
 
-//Parallel includes
-#include <cilk/cilk.h>
-
 //Local include
 #include "./Simulation.hpp"
-#include "./CellMove.hpp"
 
 using namespace std;
 
@@ -61,29 +56,33 @@ double Simulation::swapChange(int pos1, int pos2) {
 }
 
 void Simulation::performMove(Move* m) {
-  if (m->getType() == 0) {
+  int type = m->type;
+  int pos = m->pos;
+  int par = m->par;
+
+  if (!type) {
     //Get energy change associated with rotation
-    double de = rotChange(m->getPos(), m->getPar())/kT;
+    double de = rotChange(pos, par)/kT;
 
     //Check acceptance
     if ((double)rand()/(double)RAND_MAX < exp(-de)) {
       //Update orientation and history
-      int curr = array[m->getPos()]%10;
-      array[m->getPos()] += m->getPar() - curr;
+      int curr = array[pos]%10;
+      array[pos] += par - curr;
 
       //Update energy
       energy += de;
     }
-  } else if (m->getType() == 1) {
+  } else {
     //Calculate energy change associated with swap
-    double de = swapChange(m->getPos(), m->getPar())/kT;
+    double de = swapChange(pos, par)/kT;
 
     //Check acceptance
     if ((double)rand()/(double)RAND_MAX < exp(-de)) {
       //Swap cells
-      int temp = array[m->getPos()];
-      array[m->getPos()] = array[m->getPar()];
-      array[m->getPar()] = temp;
+      int temp = array[pos];
+      array[pos] = array[par];
+      array[par] = temp;
 
       //Update energy
       energy += de;
@@ -325,7 +324,7 @@ Simulation::~Simulation() {
 void Simulation::doSweep() {
   //Generate moves into array
   Move* moves [NMAX];
-  cilk_for (int i = 0; i < NMAX; i++) {
+  for (int i = 0; i < NMAX; i++) {
     //Decide rotation (0) or swap (1)
     int type = (((double)rand()/(double)RAND_MAX < ROTATION) ? 0 : 1);
     int pos = rand()%NMAX;

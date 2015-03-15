@@ -7,7 +7,14 @@
 #ifndef _SIMULATION_HPP_
 #define _SIMULATION_HPP_
 
-#include "./CellMove.hpp"
+//Lightweight container to hold move info
+class Move {
+  public:
+    Move(int ty, int p, int q) : type(ty), pos(p), par(q) {};
+    int type; //0 for rotation, 1 for particle swap
+    int pos; //Lattice position
+    int par; //Parameter: will be new or for rotation, 2nd position if swap
+};
 
 //Simulation class
 //Holds lattice, generates and performs moves, calculates data
