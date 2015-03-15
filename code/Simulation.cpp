@@ -8,7 +8,7 @@
 #include <cmath>
 
 //Parallel includes
-#include <tbb/concurrent_queue.h>
+#include <tbb/concurrent_vector.h>
 #include <tbb/flow_graph.h>
 
 //Local include
@@ -16,6 +16,7 @@
 
 using namespace std;
 using namespace tbb;
+using namespace tbb::flow;
 
 /******************************
  * Simulation PRIVATE FUNCTIONS
@@ -327,23 +328,79 @@ Simulation::~Simulation() {
 
 //Function to evolve simulation by one sweep
 void Simulation::doSweep() {
-  //Generate moves into concurrent_queue
-  concurrent_queue<Move*> moves;
+  //Initialize flow graph
+  graph g;
+  broadcast_node<continue_msg> startNode(g);
+
+  //Generate move nodes into concurrent_vector
+  concurrent_vector<Move*> moves;
   for (int i = 0; i < NMAX; i++) {
     //Decide rotation (0) or swap (1)
     int type = (((double)rand()/(double)RAND_MAX < ROTATION) ? 0 : 1);
     int pos = rand()%NMAX;
     int param = (type ? rand()%NMAX : rand()%6 + 1); //New orient if rot, 2nd lattice position if swap
-    moves.push(new Move(type, pos, param));
+
+    //Create and store node
+    moves.push_back(new Move(type, pos, param));
   }
 
-  //Run through moves and perform them (in serial bcuz overhead not worth it)
-  while (!moves.empty()) {
-    Move* m;
-    if (moves.try_pop(m)) performMove(m);
+  //Keep track of dependencies for graph generation
+  //Each position is a cell, each value is the last move that touched it
+  //NOTE: 1 is the first move (offset by 1 so that 0 is no dependency)
+  int moveDep [NMAX];
+  for (int i = 0; i < NMAX; ++i) moveDep[i] = 0;
 
-    //Memory Managament
-    delete m;
+  //Keep pointers to move nodes
+  continue_node<continue_msg>* moveNodes [NMAX];
+
+  //Run through and make edges
+  for (int i = 0; i < NMAX; ++i) {
+    Move* m = moves[i];
+    int type = m->type;
+    int pos = m->pos;
+    int par = m->par;
+
+    //Create move node
+    moveNodes[i] = new continue_node<continue_msg> (g, moveBody(this, m));
+
+    //Get a list of position affected by the move
+    int aff [(type ? 14 : 7)];
+    aff[0] = pos; aff[1] = step3d(pos, 0, -1); aff[2] = step3d(pos, 0, 1); aff[3] = step3d(pos, 1, -1); aff[4] = step3d(pos, 1, 1); aff[5] = step3d(pos, 2, -1); aff[6] = step3d(pos, 2, 1);
+    if (type) { //If swap, affects two locations
+      aff[7] = par; aff[8] = step3d(par, 0, -1); aff[9] = step3d(par, 0, 1); aff[10] = step3d(par, 1, -1); aff[11] = step3d(par, 1, 1); aff[12] = step3d(par, 2, -1); aff[13] = step3d(par, 2, 1);
+    }
+
+    //Run through affected nodes and see what move previously touched
+    int dep = 0;
+    for (int j = 0; j < (type ? 14 : 7); ++j) {
+      int affPos = aff[j];
+      if (moveDep[affPos]) {
+        //Increment dependency flag
+        dep++;
+
+        //Link dependency
+        make_edge(*moveNodes[moveDep[affPos]-1], *moveNodes[i]);
+      }
+    }
+
+    //If no dependencies, link to start node
+    if (!dep) make_edge(startNode, *moveNodes[i]);
+
+    //Update dependency
+    moveDep[pos] = i+1;
+    if (type) moveDep[par] = i+1;
+  }
+
+  //Start moves performing in parallel
+  startNode.try_put(continue_msg());
+
+  //Wait for completion
+  g.wait_for_all();
+
+  //Memory Management
+  for (int i = 0; i < NMAX; i++) {
+    delete moves[i];
+    delete moveNodes[i];
   }
 }
 

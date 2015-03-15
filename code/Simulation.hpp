@@ -7,6 +7,9 @@
 #ifndef _SIMULATION_HPP_
 #define _SIMULATION_HPP_
 
+//Parallel include
+#include <tbb/flow_graph.h>
+
 //Lightweight container to hold move info
 class Move {
   public:
@@ -54,6 +57,16 @@ class Simulation {
     //Utility functions
     int wrap1d(int coord, int dir, int step);
     int step3d(int index, int dir, int step);
+
+    //Helper struct for dependency graph
+    struct moveBody {
+      Simulation* sim;
+      Move* move;
+      moveBody(Simulation* s, Move* m) : sim(s), move(m) {};
+      void operator() (tbb::flow::continue_msg) const {
+        sim->performMove(move);
+      }
+    };
 
     //Friend for testing
     friend class SimTest;
