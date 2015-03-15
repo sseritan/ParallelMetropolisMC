@@ -1,5 +1,6 @@
 //
 // Written by Stefan Seritan on 03/11/15 for CS 140
+// Modified by Wei Dai 03/15/15
 // Cell and Move classes (encapsulation for Simulation data)
 //
 
@@ -7,10 +8,13 @@
 #define _CELL_MOVE_HPP_
 
 #include <iostream>
+#include "tbb/spin_mutex.h"
+#include <mutex>
 
 //Cell class
 //Store id, orientation, and update history
-class Cell {
+// class Cell: public std::mutex { // Use this line for mutex from STL
+class Cell: public tbb::spin_mutex { // Use this line for spinlock from tbb
     int id, orient; //Identity and orientation
 
   public:

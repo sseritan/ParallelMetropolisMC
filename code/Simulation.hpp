@@ -1,6 +1,7 @@
 //
 //
 // Written by Stefan Seritan on 03/06/15
+// Modified by Wei Dai 03/15/15
 // Header file for Simulation class
 //
 
@@ -8,7 +9,6 @@
 #define _SIMULATION_HPP_
 
 #include "./CellMove.hpp"
-#include <mutex>
 #include <random>
 
 #define CACHE_LINE_SIZE 64
@@ -32,11 +32,8 @@ class Simulation {
     mutable double energy; //Energy (continuously updated)
     double cutoff; //Theta cutoff value for phase separation
 
-    /* mutable Cell *array; //1D array of Cell* */
-    alignas(CACHE_LINE_SIZE) mutable Cell *array; //1D array of Cell*
-
-    /* std::mutex mutable *locks; // Even and odd locks from STL */
-    alignas(CACHE_LINE_SIZE) mutable std::mutex *locks; // Even and odd locks from STL
+    mutable Cell *array; //1D array of Cell*
+    /* alignas(CACHE_LINE_SIZE) mutable Cell *array; //1D array of Cell* */
 
     //Private functions
     //Locking

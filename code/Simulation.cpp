@@ -1,5 +1,6 @@
 //
 // Written by Stefan Seritan on 03/06/15 for CS 140
+// Modified by Wei Dai 03/15/15
 // All member functions for the Cell and Simulation classes
 //
 
@@ -89,8 +90,8 @@ double Simulation::performMove(const Move* const m) const {
   /* m->printMove(); */
   if (m->getType() == 0) {
     posLocks(m->getPos(), l0, l1);
-    locks[l0].lock();
-    locks[l1].lock();
+    array[l0].lock();
+    array[l1].lock();
     //Get energy change associated with rotation
     double de = rotChange(m->getPos(), m->getPar())/kT;
 
@@ -103,27 +104,27 @@ double Simulation::performMove(const Move* const m) const {
       e = de;
     }
 
-    locks[l1].unlock();
-    locks[l0].unlock();
+    array[l1].unlock();
+    array[l0].unlock();
   } else if (m->getType() == 1) {
     posLocks(m->getPos(), l0, l1);
     posLocks(m->getPar(), l2, l3);
 
     // Lock evens first, small then large
     if (l0 < l2) {
-      locks[l0].lock();
-      locks[l2].lock();
+      array[l0].lock();
+      array[l2].lock();
     } else if (l2 < l0) {
-      locks[l2].lock();
-      locks[l0].lock();
+      array[l2].lock();
+      array[l0].lock();
     }
     // Lock odds, small then large
     if (l1 < l3) {
-      locks[l1].lock();
-      locks[l3].lock();
+      array[l1].lock();
+      array[l3].lock();
     } else if (l3 < l1) {
-      locks[l3].lock();
-      locks[l1].lock();
+      array[l3].lock();
+      array[l1].lock();
     }
 
     //Calculate energy change associated with swap
@@ -140,19 +141,19 @@ double Simulation::performMove(const Move* const m) const {
 
     // Unlock odds first, large then small
     if (l1 < l3) {
-      locks[l3].unlock();
-      locks[l1].unlock();
+      array[l3].unlock();
+      array[l1].unlock();
     } else if (l3 < l1) {
-      locks[l1].unlock();
-      locks[l3].unlock();
+      array[l1].unlock();
+      array[l3].unlock();
     }
     // Unlock evens, large then small
     if (l0 < l2) {
-      locks[l2].unlock();
-      locks[l0].unlock();
+      array[l2].unlock();
+      array[l0].unlock();
     } else if (l2 < l0) {
-      locks[l0].unlock();
-      locks[l2].unlock();
+      array[l0].unlock();
+      array[l2].unlock();
     }
   }
   return e;
@@ -370,9 +371,6 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
   //Allocate array of Cells
   array = new Cell[NMAX];
 
-  //Allocate even and odd locks
-  locks = new std::mutex[NMAX];
-
   //Initialize cells
   int threshold = compA*NMAX;
   cout << "Simulation seeded with " << threshold << "/" << NMAX << " particles of species 1" << endl;
@@ -413,26 +411,25 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
 //Destructor
 Simulation::~Simulation() {
   //Memory Management
-  delete[] locks;
   delete[] array;
 }
 
 //Function to evolve simulation by one sweep
 void Simulation::doSweep() {
-  uniform_int_distribution<> type(0, 1);
-  uniform_int_distribution<> pos(0, NMAX-1);
-  uniform_int_distribution<> orient(1, 6);
-  uniform_real_distribution<double> prob(0, 1);
+  /* uniform_int_distribution<> type(0, 1); */
+  /* uniform_int_distribution<> pos(0, NMAX-1); */
+  /* uniform_int_distribution<> orient(1, 6); */
+  /* uniform_real_distribution<double> prob(0, 1); */
   const Move* moves[NMAX];
   for (int i = 0; i < NMAX; i++) {
-    /* int ty = ((double) rand()/(double)RAND_MAX < ROTATION) ? 0 : 1; */
-    /* int p = rand()%NMAX; */
-    /* int q = (ty ? rand()%NMAX : rand()%6 + 1); */
-    /* double r = (double)rand()/(double)RAND_MAX; */
-    int ty = type(gen);
-    int p = pos(gen);
-    int q = (ty ? pos(gen) : orient(gen));
-    double r = prob(gen);
+    int ty = ((double) rand()/(double)RAND_MAX < ROTATION) ? 0 : 1;
+    int p = rand()%NMAX;
+    int q = (ty ? rand()%NMAX : rand()%6 + 1);
+    double r = (double)rand()/(double)RAND_MAX;
+    /* int ty = type(gen); */
+    /* int p = pos(gen); */
+    /* int q = (ty ? pos(gen) : orient(gen)); */
+    /* double r = prob(gen); */
     moves[i] = new Move(ty, p, q, r);
     /* moves[i]->printMove(); */
   }
