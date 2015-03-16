@@ -17,11 +17,11 @@
 //Holds lattice, generates and performs moves, calculates data
 class Simulation {
     //Hardcoded simulation parameters
-    const int Q = 6;
-    const double K = 0.5;
-    const double A = 1.0;
-    const double ROTATION = 0.5;
-    const double PARTSWAP = 0.5;
+    int Q = 6;
+    double K = 0.5;
+    double A = 1.0;
+    double ROTATION = 0.5;
+    double PARTSWAP = 0.5;
 
     int Lx, Ly, Lz; //3D Lattice dimensions
     int NMAX;
