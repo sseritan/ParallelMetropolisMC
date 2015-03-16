@@ -9,6 +9,7 @@
 
 //Parallel includes
 #include <tbb/concurrent_vector.h>
+#include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 #include <tbb/blocked_range.h>
 #include <tbb/flow_graph.h>
@@ -109,39 +110,41 @@ double* Simulation::calctheta() {
   double* theta = new double [NMAX];
 
   //Run through and calculate for every lattice position
-  //TODO: parallel_for (blocks?)
-  for (int i = 0; i < NMAX; i++) {
-    theta[i] = 0.5;
+  parallel_for (blocked_range<int>(0, NMAX),
+      [this, &theta](blocked_range<int>& r) { //Lambda theta calculation
+        for (int i = r.begin(); i != r.end(); ++i) {
+          theta[i] = 0.5;
 
-    //Split into 3D coords
-    int x = (i%(Lx*Ly))%Lx;
-    int y = (i%(Lx*Ly))/Lx;
-    int z = i/(Lx*Ly);
+          //Split into 3D coords
+          int x = (i%(Lx*Ly))%Lx;
+          int y = (i%(Lx*Ly))/Lx;
+          int z = i/(Lx*Ly);
 
-    //Run through neighbors (3x3x3 cube)
-    int id = array[i]/10;
-    for (int a = -1; a < 2; a++) {
-      for (int b = -1; b < 2; b++) {
-        for (int c = -1; c < 2; c++) {
-          //Convert back to 1D coord
-          int index = wrap1d(x, 0, a) + wrap1d(y, 1, b)*Lx + wrap1d(z, 2, c)*Lx*Ly;
+          //Run through neighbors (3x3x3 cube)
+          int id = array[i]/10;
+          for (int a = -1; a < 2; a++) {
+            for (int b = -1; b < 2; b++) {
+              for (int c = -1; c < 2; c++) {
+                //Convert back to 1D coord
+                int index = wrap1d(x, 0, a) + wrap1d(y, 1, b)*Lx + wrap1d(z, 2, c)*Lx*Ly;
 
-          //Increase theta if id match
-          if (id == array[index]/10) {
-            theta[i] += 1.0/52.0;
+                //Increase theta if id match
+                if (id == array[index]/10) {
+                  theta[i] += 1.0/52.0;
+                }
+              }
+            }
+          }
+
+          //Remove overcount
+          theta[i] -= 1.0/52.0;
+
+          //If id = 2, we really wanted + to be -
+          if (id == 2) {
+            theta[i] = 1.0 - theta[i];
           }
         }
-      }
-    }
-
-    //Remove overcount
-    theta[i] -= 1.0/52.0;
-
-    //If id = 2, we really wanted + to be -
-    if (id == 2) {
-      theta[i] = 1.0 - theta[i];
-    }
-  }
+      });
 
   return theta;
 }
@@ -155,27 +158,29 @@ double* Simulation::calcTheta() {
   //Get theta
   double* theta = calctheta();
 
-  //TODO: parallel_for (blocks?)
-  for (int i = 0; i < NMAX; i++) {
-    Theta[i] = 0.0;
+  parallel_for (blocked_range<int>(0, NMAX),
+      [this, &theta, &Theta](blocked_range<int>& r) { //Lambda Theta calculation
+        for (int i = r.begin(); i != r.end(); ++i) {
+          Theta[i] = 0.0;
 
-    //Split into 3D coords
-    int x = (i%(Lx*Ly))%Lx;
-    int y = (i%(Lx*Ly))/Lx;
-    int z = i/(Lx*Ly);
+          //Split into 3D coords
+          int x = (i%(Lx*Ly))%Lx;
+          int y = (i%(Lx*Ly))/Lx;
+          int z = i/(Lx*Ly);
 
-    //Run through neighbors
-    for (int a = -1; a <= 1; a++) {
-      for (int b = -1; b <= 1; b++) {
-        for (int c = -1; c <= 1; c++) {
-          Theta[i] += theta[wrap1d(x, 0, a) + wrap1d(y, 1, b)*Lx + wrap1d(z, 2, c)*Lx*Ly];
+          //Run through neighbors
+          for (int a = -1; a <= 1; a++) {
+            for (int b = -1; b <= 1; b++) {
+              for (int c = -1; c <= 1; c++) {
+                Theta[i] += theta[wrap1d(x, 0, a) + wrap1d(y, 1, b)*Lx + wrap1d(z, 2, c)*Lx*Ly];
+              }
+            }
+          }
+
+          //Average out Theta
+          Theta[i] /= 27.0;
         }
-      }
-    }
-
-    //Average out Theta
-    Theta[i] /= 27.0;
-  }
+      });
 
   //Memory Management
   delete[] theta;
