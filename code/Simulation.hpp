@@ -17,6 +17,8 @@ class Move {
     int type; //0 for rotation, 1 for particle swap
     int pos; //Lattice position
     int par; //Parameter: will be new or for rotation, 2nd position if swap
+
+    double de; //Move energy (0 if rejected, de for the move elsewise)
 };
 
 //Simulation class

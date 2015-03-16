@@ -9,6 +9,8 @@
 
 //Parallel includes
 #include <tbb/concurrent_vector.h>
+#include <tbb/parallel_reduce.h>
+#include <tbb/blocked_range.h>
 #include <tbb/flow_graph.h>
 
 //Local include
@@ -76,8 +78,10 @@ void Simulation::performMove(Move* m) {
       int curr = array[pos]%10;
       array[pos] += par - curr;
 
-      //Update energy
-      energy += de;
+      //Store de
+      m->de = de;
+    } else {
+      m->de = 0.0;
     }
   } else {
     //Calculate energy change associated with swap
@@ -90,8 +94,10 @@ void Simulation::performMove(Move* m) {
       array[pos] = array[par];
       array[par] = temp;
 
-      //Update energy
-      energy += de;
+      //Store de
+      m->de = de;
+    } else {
+      m->de = 0.0;
     }
   }
 }
@@ -333,7 +339,7 @@ void Simulation::doSweep() {
   broadcast_node<continue_msg> startNode(g);
 
   //Generate move nodes into concurrent_vector
-  concurrent_vector<Move*> moves;
+  Move* moves [NMAX];
   for (int i = 0; i < NMAX; i++) {
     //Decide rotation (0) or swap (1)
     int type = (((double)rand()/(double)RAND_MAX < ROTATION) ? 0 : 1);
@@ -341,7 +347,7 @@ void Simulation::doSweep() {
     int param = (type ? rand()%NMAX : rand()%6 + 1); //New orient if rot, 2nd lattice position if swap
 
     //Create and store node
-    moves.push_back(new Move(type, pos, param));
+    moves[i] = new Move(type, pos, param);
   }
 
   //Keep track of dependencies for graph generation
@@ -396,6 +402,20 @@ void Simulation::doSweep() {
 
   //Wait for completion
   g.wait_for_all();
+
+  //Parallel reduce des into a sweep de
+  double deSweep = parallel_reduce(blocked_range<Move**>(moves, moves + NMAX), 0.0, //Range and initial value
+      [](blocked_range<Move**>& r, const double init)-> double { //Lambda expression for serial reduction
+        double temp = init;
+        for (Move** m = r.begin(); m != r.end(); ++m) temp += (*m)->de;
+        return temp;
+      },
+      [&](const double& e, const double& de)-> double { //de accumulating function
+        return e + de;
+      });
+
+  //Update energy
+  energy += deSweep;
 
   //Memory Management
   for (int i = 0; i < NMAX; i++) {
