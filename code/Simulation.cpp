@@ -103,6 +103,65 @@ void Simulation::performMove(Move* m) {
   }
 }
 
+//Create dependency graph
+void Simulation::genDepGraph(graph& g, broadcast_node<continue_msg>& s, Move** m, continue_node<continue_msg>** n) {
+  //Keep track of dependencies for graph generation
+  //Each position is a cell, each value is the last move that touched it
+  //0 denotes no dependency, moves are +1 from index
+  int moveDep [NMAX];
+  for (int i = 0; i < NMAX; ++i) {
+    moveDep[i] = 0;
+  }
+
+  for (int i = 0; i < NMAX; ++i) {
+    Move* move = m[i];
+    int type = move->type;
+    int pos = move->pos;
+    int par = move->par;
+
+    //Create move node
+    n[i] = new continue_node<continue_msg> (g, moveBody(this, move));
+
+    //Check dependencies
+    int dep = 0;
+    if (moveDep[pos]) {
+      //Dependency
+      dep = 1;
+
+      make_edge(*n[moveDep[pos]-1], *n[i]);
+    }
+
+    //Check 2nd position if particle swap
+    if (type && moveDep[par]) {
+      //Dependency
+      dep = 1;
+
+      make_edge(*n[moveDep[par]-1], *n[i]);
+    }
+
+    if (!dep) {
+      //No dependencies, link to start
+      make_edge(s, *n[i]);
+    }
+
+    //Mark footprint on moveDep
+    moveDep[pos] = i+1;
+    for (int j = 0; j < 3; ++j) {
+      for (int k = -1;k <= 1; k += 2) {
+        moveDep[step3d(pos, j, k)] = i+1;
+      }
+    }
+    if (type == 1) {
+      moveDep[par] = i+1;
+      for (int j = 0; j < 3; ++j) {
+        for (int k = -1;k <= 1; k += 2) {
+          moveDep[step3d(par, j, k)] = i+1;
+        }
+      }
+    }
+  }
+}
+
 //Calculate theta (M=26)
 //From V. Argawal and B. Peters, J. Chem. Phys. 140, 084111
 double* Simulation::calctheta() {
@@ -355,52 +414,12 @@ void Simulation::doSweep() {
     moves[i] = new Move(type, pos, param);
   }
 
-  //Keep track of dependencies for graph generation
-  //Each position is a cell, each value is the last move that touched it
-  //NOTE: 1 is the first move (offset by 1 so that 0 is no dependency)
-  int moveDep [NMAX];
-  for (int i = 0; i < NMAX; ++i) moveDep[i] = 0;
 
   //Keep pointers to move nodes
   continue_node<continue_msg>* moveNodes [NMAX];
 
-  //Run through and make edges
-  for (int i = 0; i < NMAX; ++i) {
-    Move* m = moves[i];
-    int type = m->type;
-    int pos = m->pos;
-    int par = m->par;
-
-    //Create move node
-    moveNodes[i] = new continue_node<continue_msg> (g, moveBody(this, m));
-
-    //Get a list of position affected by the move
-    int aff [(type ? 14 : 7)];
-    aff[0] = pos; aff[1] = step3d(pos, 0, -1); aff[2] = step3d(pos, 0, 1); aff[3] = step3d(pos, 1, -1); aff[4] = step3d(pos, 1, 1); aff[5] = step3d(pos, 2, -1); aff[6] = step3d(pos, 2, 1);
-    if (type) { //If swap, affects two locations
-      aff[7] = par; aff[8] = step3d(par, 0, -1); aff[9] = step3d(par, 0, 1); aff[10] = step3d(par, 1, -1); aff[11] = step3d(par, 1, 1); aff[12] = step3d(par, 2, -1); aff[13] = step3d(par, 2, 1);
-    }
-
-    //Run through affected nodes and see what move previously touched
-    int dep = 0;
-    for (int j = 0; j < (type ? 14 : 7); ++j) {
-      int affPos = aff[j];
-      if (moveDep[affPos]) {
-        //Increment dependency flag
-        dep++;
-
-        //Link dependency
-        make_edge(*moveNodes[moveDep[affPos]-1], *moveNodes[i]);
-      }
-    }
-
-    //If no dependencies, link to start node
-    if (!dep) make_edge(startNode, *moveNodes[i]);
-
-    //Update dependency
-    moveDep[pos] = i+1;
-    if (type) moveDep[par] = i+1;
-  }
+  //Generate graph
+  genDepGraph(g, startNode, moves, moveNodes);
 
   //Start moves performing in parallel
   startNode.try_put(continue_msg());

@@ -48,6 +48,7 @@ class Simulation {
     double swapChange(int pos1, int pos2);
     //Move functions
     void performMove(Move* m);
+    void genDepGraph(tbb::flow::graph& g, tbb::flow::broadcast_node<tbb::flow::continue_msg>& s, Move** m, tbb::flow::continue_node<tbb::flow::continue_msg>** n);
     //Data functions
     double* calctheta();
     double* calcTheta();
