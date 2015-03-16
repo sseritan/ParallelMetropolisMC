@@ -23,7 +23,7 @@ class SpinLock {
 
 //Cell class
 //Store id, orientation, and update history
-class Cell: public SpinLock {
+class Cell {
     int id, orient; //Identity and orientation
 
   public:

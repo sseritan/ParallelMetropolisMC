@@ -88,8 +88,8 @@ double Simulation::performMove(const Move* const m) const {
   /* m->printMove(); */
   if (m->getType() == 0) {
     posLocks(m->getPos(), l0, l1);
-    array[l0].lock();
-    array[l1].lock();
+    locks[l0].lock();
+    locks[l1].lock();
     //Get energy change associated with rotation
     double de = rotChange(m->getPos(), m->getPar())/kT;
 
@@ -102,27 +102,27 @@ double Simulation::performMove(const Move* const m) const {
       e = de;
     }
 
-    array[l1].unlock();
-    array[l0].unlock();
+    locks[l1].unlock();
+    locks[l0].unlock();
   } else if (m->getType() == 1) {
     posLocks(m->getPos(), l0, l1);
     posLocks(m->getPar(), l2, l3);
 
     // Lock evens first, small then large
     if (l0 < l2) {
-      array[l0].lock();
-      array[l2].lock();
+      locks[l0].lock();
+      locks[l2].lock();
     } else if (l2 < l0) {
-      array[l2].lock();
-      array[l0].lock();
+      locks[l2].lock();
+      locks[l0].lock();
     }
     // Lock odds, small then large
     if (l1 < l3) {
-      array[l1].lock();
-      array[l3].lock();
+      locks[l1].lock();
+      locks[l3].lock();
     } else if (l3 < l1) {
-      array[l3].lock();
-      array[l1].lock();
+      locks[l3].lock();
+      locks[l1].lock();
     }
 
     //Calculate energy change associated with swap
@@ -139,19 +139,19 @@ double Simulation::performMove(const Move* const m) const {
 
     // Unlock odds first, large then small
     if (l1 < l3) {
-      array[l3].unlock();
-      array[l1].unlock();
+      locks[l3].unlock();
+      locks[l1].unlock();
     } else if (l3 < l1) {
-      array[l1].unlock();
-      array[l3].unlock();
+      locks[l1].unlock();
+      locks[l3].unlock();
     }
     // Unlock evens, large then small
     if (l0 < l2) {
-      array[l2].unlock();
-      array[l0].unlock();
+      locks[l2].unlock();
+      locks[l0].unlock();
     } else if (l2 < l0) {
-      array[l0].unlock();
-      array[l2].unlock();
+      locks[l0].unlock();
+      locks[l2].unlock();
     }
   }
   return e;
@@ -356,23 +356,33 @@ int Simulation::step3d(int index, int dir, int step) const {
 
 //Constructor
 Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
+  int myrank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+
   Lx = x; Ly = y; Lz = z;
   NMAX = Lx*Ly*Lz;
   kT = T;
   cutoff = c;
 
-  cout << "Hamiltonian: K=" << K << " A=" << A << endl;
-  cout << "Move probabilities: Rotation=" << ROTATION << " Particle Swap=" << PARTSWAP << endl;
-  cout << "Lattice dimensions of " << Lx << "x" << Ly << "x" << Lz << endl;
-  cout << "Temperature (kT) of " << kT << endl;
+  if (myrank == 0) {
+    cout << "Hamiltonian: K=" << K << " A=" << A << endl;
+    cout << "Move probabilities: Rotation=" << ROTATION << " Particle Swap=" << PARTSWAP << endl;
+    cout << "Lattice dimensions of " << Lx << "x" << Ly << "x" << Lz << endl;
+    cout << "Temperature (kT) of " << kT << endl;
+  }
 
   //Allocate array of Cells
   array = new Cell[NMAX];
 
+  //Allocate locks
+  locks = new SpinLock[NMAX];
+
   //Initialize cells
   int threshold = compA*NMAX;
-  cout << "Simulation seeded with " << threshold << "/" << NMAX << " particles of species 1" << endl;
-  cout << "Using Theta cutoff value of " << cutoff << endl;
+  if (myrank == 0) {
+    cout << "Simulation seeded with " << threshold << "/" << NMAX << " particles of species 1" << endl;
+    cout << "Using Theta cutoff value of " << cutoff << endl;
+  }
 
   //Set species 1
   //TODO: parallel_for
@@ -389,7 +399,8 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
 
   //Initialize random number generation
   auto seed = chrono::high_resolution_clock::now().time_since_epoch().count();
-  cout << "Using seed " << seed << " for srand()" << endl;
+  if (myrank == 0)
+    cout << "Using seed " << seed << " for srand()" << endl;
   srand(seed);
 
   //Initialize energy of the system
@@ -402,14 +413,17 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
     }
   }
 
-  cout << "Initial energy: " << energy/kT << endl;
-  cout << endl;
+  if (myrank == 0) {
+    cout << "Initial energy: " << energy/kT << endl;
+    cout << endl;
+  }
 }
 
 //Destructor
 Simulation::~Simulation() {
   //Memory Management
   delete[] array;
+  delete[] locks;
 }
 
 //Function to evolve simulation by one sweep

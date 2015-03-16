@@ -9,6 +9,7 @@
 #define _SIMULATION_HPP_
 
 #include "./CellMove.hpp"
+#include "mpi.h"
 #include <random>
 
 #define CACHE_LINE_SIZE 64
@@ -26,11 +27,9 @@ class Simulation {
     int Lx, Ly, Lz; //3D Lattice dimensions
     int NMAX;
     double kT; //Temperature
-    mutable double energy; //Energy (continuously updated)
     double cutoff; //Theta cutoff value for phase separation
 
-    mutable Cell *array; //1D array of Cell*
-    /* alignas(CACHE_LINE_SIZE) mutable Cell *array; //1D array of Cell* */
+    mutable SpinLock *locks; //1D array of locks
 
     //Private functions
     //Locking
@@ -57,6 +56,9 @@ class Simulation {
     //Friend for testing
     friend class SimTest;
   public:
+    //Public for MPI
+    mutable double energy; //Energy (continuously updated)
+    mutable Cell *array; //1D array of Cell*
     //Constructor
     Simulation(int x, int y, int z, double T, double compA, double c);
     //Destructor
