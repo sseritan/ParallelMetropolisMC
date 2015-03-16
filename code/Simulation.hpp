@@ -23,9 +23,6 @@ class Simulation {
     const double ROTATION = 0.5;
     const double PARTSWAP = 0.5;
 
-    std::random_device rd;
-    mutable std::mt19937_64 gen;
-
     int Lx, Ly, Lz; //3D Lattice dimensions
     int NMAX;
     double kT; //Temperature

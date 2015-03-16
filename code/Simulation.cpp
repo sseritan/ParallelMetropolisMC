@@ -416,42 +416,18 @@ Simulation::~Simulation() {
 
 //Function to evolve simulation by one sweep
 void Simulation::doSweep() {
-  /* uniform_int_distribution<> type(0, 1); */
-  /* uniform_int_distribution<> pos(0, NMAX-1); */
-  /* uniform_int_distribution<> orient(1, 6); */
-  /* uniform_real_distribution<double> prob(0, 1); */
-  const Move* moves[NMAX];
+  unsigned int seed = (unsigned int) rand();
+  double de = 0.0;
+  #pragma omp parallel for reduction(+:de)
   for (int i = 0; i < NMAX; i++) {
-    int ty = ((double) rand()/(double)RAND_MAX < ROTATION) ? 0 : 1;
-    int p = rand()%NMAX;
-    int q = (ty ? rand()%NMAX : rand()%6 + 1);
-    double r = (double)rand()/(double)RAND_MAX;
-    /* int ty = type(gen); */
-    /* int p = pos(gen); */
-    /* int q = (ty ? pos(gen) : orient(gen)); */
-    /* double r = prob(gen); */
-    moves[i] = new Move(ty, p, q, r);
-    /* moves[i]->printMove(); */
+    int ty = ((double) rand_r(&seed)/(double)RAND_MAX < ROTATION) ? 0 : 1;
+    int p = rand_r(&seed)%NMAX;
+    int q = (ty ? rand_r(&seed)%NMAX : rand_r(&seed)%6 + 1);
+    double r = (double)rand_r(&seed)/(double)RAND_MAX;
+    Move move(ty, p, q, r);
+    de += performMove(&move);
   }
-  energy += tbb::parallel_reduce(
-      tbb::blocked_range<int>(0, NMAX),
-      0.d,
-      [&] (const tbb::blocked_range<int>& r, double init)->double {
-      for (int i=r.begin(); i!=r.end(); ++i) {
-        init += performMove(moves[i]);
-        delete moves[i];
-      }
-      return init;
-      }, [](double x, double y)->double {
-      return x + y;
-      });
-  /* double de = 0.0; */
-  /* #pragma omp parallel for reduction(+:de) */
-  /* for (int i = 0; i < NMAX; i++) { */
-  /*   de += performMove(moves[i]); */
-  /*   delete moves[i]; */
-  /* } */
-  /* energy += de; */
+  energy += de;
 }
 
 //Function to return energy
