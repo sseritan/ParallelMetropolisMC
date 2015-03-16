@@ -8,8 +8,6 @@
 #include <vector>
 #include <chrono>
 #include <cmath>
-#include <tbb/parallel_for.h>
-#include <tbb/parallel_reduce.h>
 
 //Local include
 #include "./Simulation.hpp"

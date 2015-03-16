@@ -8,13 +8,22 @@
 #define _CELL_MOVE_HPP_
 
 #include <iostream>
-#include "tbb/spin_mutex.h"
-#include <mutex>
+#include <atomic>
+
+class SpinLock {
+    std::atomic_flag flag;
+  public:
+    void lock() {
+      while(flag.test_and_set(std::memory_order_acquire));
+    }
+    void unlock() {
+      flag.clear(std::memory_order_release);
+    }
+};
 
 //Cell class
 //Store id, orientation, and update history
-// class Cell: public std::mutex { // Use this line for mutex from STL
-class Cell: public tbb::spin_mutex { // Use this line for spinlock from tbb
+class Cell: public SpinLock {
     int id, orient; //Identity and orientation
 
   public:
