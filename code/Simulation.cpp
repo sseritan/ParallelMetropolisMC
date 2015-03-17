@@ -439,8 +439,8 @@ void Simulation::doSweep() {
       Move move(ty, p, q, r);
       de += performMove(&move);
     }
-    energy += de;
   }
+  energy += de;
 }
 
 //Function to return energy
