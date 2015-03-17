@@ -12,7 +12,7 @@
 
 //Local include
 #include "./Simulation.hpp"
-#include "./CellMove.hpp"
+#include "./MoveLock.hpp"
 
 using namespace std;
 
@@ -47,7 +47,7 @@ void Simulation::posLocks(int pos, int& even, int& odd) const {
 //Calculate the energy change for a rotation move
 double Simulation::rotChange(int pos, int q) const {
   //Look at how many orientations match in old and new config
-  int o = numOfNNOr(pos, array[pos].getOr());
+  int o = numOfNNOr(pos, array[pos]%10);
   int n = numOfNNOr(pos, q);
 
   //de = -A*(n - o)
@@ -57,8 +57,8 @@ double Simulation::rotChange(int pos, int q) const {
 //Calculate the energy change for a swap move
 double Simulation::swapChange(int pos1, int pos2) const {
   //Get id and orientation info
-  int i1 = array[pos1].getId(), i2 = array[pos2].getId();
-  int o1 = array[pos1].getOr(), o2 = array[pos2].getOr();
+  int i1 = array[pos1]/10, i2 = array[pos2]/10;
+  int o1 = array[pos1]%10, o2 = array[pos2]%10;
 
   //Calculate difference in id matches
   int did = (numOfNNId(pos1, i2) + numOfNNId(pos2, i1)) - (numOfNNId(pos1, i1) + numOfNNId(pos2, i2));
@@ -86,18 +86,25 @@ double Simulation::swapChange(int pos1, int pos2) const {
 double Simulation::performMove(const Move* const m) const {
   int l0, l1, l2, l3;
   double e = 0.0;
+
+  int type = m->getType();
+  int pos = m->getPos();
+  int par = m->getPar();
+  double prob = m->getProb();
+
   /* m->printMove(); */
-  if (m->getType() == 0) {
-    posLocks(m->getPos(), l0, l1);
+  if (type == 0) {
+    posLocks(pos, l0, l1);
     locks[l0].lock();
     locks[l1].lock();
     //Get energy change associated with rotation
-    double de = rotChange(m->getPos(), m->getPar())/kT;
+    double de = rotChange(pos, par)/kT;
 
     //Check acceptance
-    if (m->getProb() < exp(-de)) {
+    if (prob < exp(-de)) {
       //Update orientation and history
-      array[m->getPos()].setOr(m->getPar());
+      int cur = array[pos]%10;
+      array[pos] += par - cur;
 
       //Return change in energy
       e = de;
@@ -105,9 +112,9 @@ double Simulation::performMove(const Move* const m) const {
 
     locks[l1].unlock();
     locks[l0].unlock();
-  } else if (m->getType() == 1) {
-    posLocks(m->getPos(), l0, l1);
-    posLocks(m->getPar(), l2, l3);
+  } else if (type == 1) {
+    posLocks(pos, l0, l1);
+    posLocks(par, l2, l3);
 
     // Lock evens first, small then large
     if (l0 < l2) {
@@ -127,12 +134,14 @@ double Simulation::performMove(const Move* const m) const {
     }
 
     //Calculate energy change associated with swap
-    double de = swapChange(m->getPos(), m->getPar())/kT;
+    double de = swapChange(pos, par)/kT;
 
     //Check acceptance
-    if (m->getProb() < exp(-de)) {
+    if (prob < exp(-de)) {
       //Swap cells
-      swapIdOr(array[m->getPos()], array[m->getPar()]);
+      int temp = array[pos];
+      array[pos] = array[par];
+      array[par] = temp;
 
       //Return change in energy
       e = de;
@@ -175,7 +184,7 @@ double* Simulation::calctheta() const {
     int z = i/(Lx*Ly);
 
     //Run through neighbors (3x3x3 cube)
-    int id = array[i].getId();
+    int id = array[i]/10;
     for (int a = -1; a < 2; a++) {
       for (int b = -1; b < 2; b++) {
         for (int c = -1; c < 2; c++) {
@@ -183,7 +192,7 @@ double* Simulation::calctheta() const {
           int index = wrap1d(x, 0, a) + wrap1d(y, 1, b)*Lx + wrap1d(z, 2, c)*Lx*Ly;
 
           //Increase theta if id match
-          if (id == array[index].getId()) {
+          if (id == array[index]/10) {
             theta[i] += 1.0/52.0;
           }
         }
@@ -265,8 +274,8 @@ int Simulation::wrap1d(int coord, int dir, int step) const {
 double Simulation::pairEnergy(int pos1, int pos2) const {
   double e = 0.0;
 
-  if (array[pos1].getId() == array[pos2].getId()) e -= K;
-  if (array[pos1].getOr() == array[pos2].getOr()) e -= A;
+  if (array[pos1]/10 == array[pos2]/10) e -= K;
+  if (array[pos1]%10 == array[pos2]%10) e -= A;
 
   return e;
 }
@@ -278,7 +287,7 @@ int Simulation::numOfNNId(int pos, int i) const {
   //Run through neighbors and count matching ids
   for (int j = 0; j < 3; j++) {
     for (int k = -1; k <= 1; k += 2) {
-      if (array[step3d(pos, j, k)].getId() == i) count++;
+      if (array[step3d(pos, j, k)]/10 == i) count++;
     }
   }
 
@@ -292,7 +301,7 @@ int Simulation::numOfNNOr(int pos, int o) const {
   //Run through neighbors and count matching ids
   for (int i = 0; i < 3; i++) {
     for (int j = -1; j <= 1; j += 2) {
-      if (array[step3d(pos, i, j)].getOr() == o) count++;
+      if (array[step3d(pos, i, j)]%10 == o) count++;
     }
   }
 
@@ -308,21 +317,6 @@ int Simulation::areNN(int pos1, int pos2) const {
   }
 
   return 0;
-}
-
-//Swaps the identity and orientation of two cells
-//This is cheaper than changing pointers and rearranging neighbor connections
-void Simulation::swapIdOr(Cell& c1, Cell& c2) const {
-  //Save 1's info
-  int tempId = c1.getId(), tempOr = c1.getOr();
-
-  //Pull 2's info into 1
-  c1.setId(c2.getId()); c1.setOr(c2.getOr());
-
-  //Put 1's info into 2
-  c2.setId(tempId); c2.setOr(tempOr);
-
-  return;
 }
 
 //Step of 1D index in 3D coords, with periodic boundary conditions
@@ -373,7 +367,7 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
   }
 
   //Allocate array of Cells
-  array = new Cell[NMAX];
+  array = new int[NMAX];
 
   //Allocate locks
   locks = new SpinLock[NMAX];
@@ -387,13 +381,11 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
 
   //Set species 1
   for (int i = 0; i < threshold; i++) {
-    array[i].setId(1);
-    array[i].setOr(1);
+    array[i] = 11;
   }
   //Set species 2
   for (int i = threshold; i < NMAX; i++) {
-    array[i].setId(2);
-    array[i].setOr(1);
+    array[i] = 21;
   }
 
   //Initialize random number generation
@@ -487,12 +479,12 @@ double* Simulation::calcX1() const {
     //Decide if in 1-rich or 2-rich phase
     if (Theta[i] >= cutoff) {
       n[0]++;
-      if (array[i].getId() == 1) {
+      if (array[i]/10 == 1) {
         n1[0]++;
       }
     } else {
       n[1]++;
-      if (array[i].getId() == 1) {
+      if (array[i]/10 == 1) {
         n1[1]++;
       }
     }

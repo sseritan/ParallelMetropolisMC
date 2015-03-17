@@ -100,7 +100,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Send equillibrium state
-  MPI_Bcast(sim->array, NMAX * sizeof(Cell), MPI_CHAR, 0, MPI_COMM_WORLD);
+  MPI_Bcast(sim->array, NMAX, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&sim->energy, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
   end = MPI_Wtime();

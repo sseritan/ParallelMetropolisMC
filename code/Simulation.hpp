@@ -8,7 +8,7 @@
 #ifndef _SIMULATION_HPP_
 #define _SIMULATION_HPP_
 
-#include "./CellMove.hpp"
+#include "./MoveLock.hpp"
 #include "mpi.h"
 #include <random>
 
@@ -48,8 +48,6 @@ class Simulation {
     int numOfNNId(int pos, int i) const;
     int numOfNNOr(int pos, int o) const;
     int areNN(int pos1, int pos2) const;
-    //Cell manipulation functions
-    void swapIdOr(Cell& c1, Cell& c2) const;
     //Utility functions
     int step3d(int index, int dir, int step) const;
 
@@ -58,7 +56,7 @@ class Simulation {
   public:
     //Public for MPI
     mutable double energy; //Energy (continuously updated)
-    mutable Cell *array; //1D array of Cell*
+    mutable int *array; //1D array of ints (id is 10s place, orientation is 1s place)
     //Constructor
     Simulation(int x, int y, int z, double T, double compA, double c);
     //Destructor

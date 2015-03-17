@@ -4,8 +4,8 @@
 // Cell and Move classes (encapsulation for Simulation data)
 //
 
-#ifndef _CELL_MOVE_HPP_
-#define _CELL_MOVE_HPP_
+#ifndef _MOVE_LOCK_HPP_
+#define _MOVE_LOCK_HPP_
 
 #include <iostream>
 #include <atomic>
@@ -20,24 +20,6 @@ class SpinLock {
     void unlock() {
       flag.clear(std::memory_order_release);
     }
-};
-
-//Cell class
-//Store id, orientation, and update history
-class Cell {
-    int id, orient; //Identity and orientation
-
-  public:
-    Cell(){};
-    Cell(int i, int o) : id(i), orient(o) {};
-    //Getters
-    int getId() const {return id;}
-    int getOr() const {return orient;}
-    //Setters
-    void setId(int i) {id = i;}
-    void setOr(int o) {orient = o;}
-    //Utility functions
-    void printCell() const {std::cout << "Id " << id << " Or " << orient << std::endl;}
 };
 
 //Lightweight container to hold move info
