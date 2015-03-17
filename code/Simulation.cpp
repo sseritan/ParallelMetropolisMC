@@ -8,6 +8,7 @@
 #include <vector>
 #include <chrono>
 #include <cmath>
+#include <omp.h>
 
 //Local include
 #include "./Simulation.hpp"
@@ -425,24 +426,21 @@ Simulation::~Simulation() {
 
 //Function to evolve simulation by one sweep
 void Simulation::doSweep() {
-  //Generate moves
-  Move* moves [NMAX];
-  unsigned int seed = (unsigned int) rand();
-  for (int i = 0; i < NMAX; i++) {
-    int ty = ((double) rand_r(&seed)/(double)RAND_MAX < ROTATION) ? 0 : 1;
-    int p = rand_r(&seed)%NMAX;
-    int q = (ty ? rand_r(&seed)%NMAX : rand_r(&seed)%6 + 1);
-    double r = (double)rand_r(&seed)/(double)RAND_MAX;
-    moves[i] = new Move(ty, p, q, r);
-  }
-
   double de = 0.0;
-  #pragma omp parallel for reduction(+:de)
-  for (int i = 0; i < NMAX; i++) {
-    de += performMove(moves[i]);
-    delete moves[i];
+  #pragma omp parallel
+  {
+    unsigned int seed = (unsigned int) (rand() ^ omp_get_thread_num());
+    #pragma omp for reduction(+:de)
+    for (int i = 0; i < NMAX; i++) {
+      int ty = ((double) rand_r(&seed)/(double)RAND_MAX < ROTATION) ? 0 : 1;
+      int p = rand_r(&seed)%NMAX;
+      int q = (ty ? rand_r(&seed)%NMAX : rand_r(&seed)%6 + 1);
+      double r = (double)rand_r(&seed)/(double)RAND_MAX;
+      Move move(ty, p, q, r);
+      de += performMove(&move);
+    }
+    energy += de;
   }
-  energy += de;
 }
 
 //Function to return energy
