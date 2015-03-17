@@ -13,6 +13,7 @@
 class SpinLock {
     std::atomic_flag flag;
   public:
+    SpinLock() {};
     void lock() {
       while(flag.test_and_set(std::memory_order_acquire));
     }

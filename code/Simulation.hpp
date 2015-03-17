@@ -30,6 +30,7 @@ class Simulation {
     double cutoff; //Theta cutoff value for phase separation
 
     mutable Cell *array; //1D array of Cell*
+    mutable SpinLock *locks;
     /* alignas(CACHE_LINE_SIZE) mutable Cell *array; //1D array of Cell* */
 
     //Private functions
