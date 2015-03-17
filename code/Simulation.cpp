@@ -410,20 +410,27 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
 Simulation::~Simulation() {
   //Memory Management
   delete[] array;
+  delete[] locks;
 }
 
 //Function to evolve simulation by one sweep
 void Simulation::doSweep() {
+  //Generate moves
+  Move* moves [NMAX];
   unsigned int seed = (unsigned int) rand();
-  double de = 0.0;
-  #pragma omp parallel for reduction(+:de)
   for (int i = 0; i < NMAX; i++) {
     int ty = ((double) rand_r(&seed)/(double)RAND_MAX < ROTATION) ? 0 : 1;
     int p = rand_r(&seed)%NMAX;
     int q = (ty ? rand_r(&seed)%NMAX : rand_r(&seed)%6 + 1);
     double r = (double)rand_r(&seed)/(double)RAND_MAX;
-    Move move(ty, p, q, r);
-    de += performMove(&move);
+    moves[i] = new Move(ty, p, q, r);
+  }
+
+  double de = 0.0;
+  #pragma omp parallel for reduction(+:de)
+  for (int i = 0; i < NMAX; i++) {
+    de += performMove(moves[i]);
+    delete moves[i];
   }
   energy += de;
 }
