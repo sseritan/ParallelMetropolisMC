@@ -429,7 +429,7 @@ void Simulation::doSweep() {
   double de = 0.0;
   #pragma omp parallel
   {
-    unsigned int seed = (unsigned int) (rand() ^ omp_get_thread_num());
+    unsigned int seed = (unsigned int) (rand() ^ ~omp_get_thread_num());
     #pragma omp for reduction(+:de)
     for (int i = 0; i < NMAX; i++) {
       int ty = ((double) rand_r(&seed)/(double)RAND_MAX < ROTATION) ? 0 : 1;
