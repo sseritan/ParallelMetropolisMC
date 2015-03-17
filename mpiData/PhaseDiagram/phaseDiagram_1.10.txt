@@ -1,0 +1,43 @@
+Hamiltonian: K=0.5 A=1
+Move probabilities: Rotation=0.5 Particle Swap=0.5
+Lattice dimensions of 10x10x100
+Temperature (kT) of 1.1
+Simulation seeded with 5000/10000 particles of species 1
+Using Theta cutoff value of 0.5
+Using seed 1426612602027633 for srand()
+Initial energy: -40818.2
+
+Started simulation
+Sweep information: Equilibration=5000 Data Gathering=10000
+Equilibration sweep 500/5000 E/kT=-39622.27
+Equilibration sweep 1000/5000 E/kT=-39341.36
+Equilibration sweep 1500/5000 E/kT=-39501.82
+Equilibration sweep 2000/5000 E/kT=-39219.55
+Equilibration sweep 2500/5000 E/kT=-39295.91
+Equilibration sweep 3000/5000 E/kT=-39415.00
+Equilibration sweep 3500/5000 E/kT=-39273.18
+Equilibration sweep 4000/5000 E/kT=-39688.64
+Equilibration sweep 4500/5000 E/kT=-39513.18
+Equilibration sweep 5000/5000 E/kT=-39324.09
+Theta Histogram:
+0: 0.00 1: 0.00 2: 0.00 3: 0.00 4: 0.00 5: 0.00 6: 0.00 7: 0.00 8: 0.01 9: 0.01 
+10: 0.01 11: 0.01 12: 0.01 13: 0.01 14: 0.01 15: 0.01 16: 0.01 17: 0.02 18: 0.02 
+19: 0.01 20: 0.02 21: 0.02 22: 0.02 23: 0.02 24: 0.02 25: 0.02 26: 0.01 27: 0.02 
+28: 0.02 29: 0.01 30: 0.01 31: 0.01 32: 0.01 33: 0.01 34: 0.01 35: 0.01 36: 0.01 
+37: 0.01 38: 0.01 39: 0.01 40: 0.01 41: 0.01 42: 0.01 43: 0.01 44: 0.01 45: 0.01 
+46: 0.01 47: 0.01 48: 0.01 49: 0.01 50: 0.01 51: 0.01 52: 0.01 53: 0.01 54: 0.01 
+55: 0.01 56: 0.01 57: 0.01 58: 0.01 59: 0.01 60: 0.01 61: 0.01 62: 0.01 63: 0.01 
+64: 0.01 65: 0.01 66: 0.01 67: 0.01 68: 0.01 69: 0.01 70: 0.01 71: 0.01 72: 0.01 
+73: 0.01 74: 0.01 75: 0.01 76: 0.01 77: 0.01 78: 0.01 79: 0.01 80: 0.01 81: 0.02 
+82: 0.02 83: 0.02 84: 0.02 85: 0.01 86: 0.01 87: 0.01 88: 0.01 89: 0.01 90: 0.01 
+91: 0.01 92: 0.01 93: 0.00 94: 0.00 95: 0.00 96: 0.00 97: 0.00 98: 0.00 99: 0.00 
+
+Average energy (E/kT): -39413.21
+X1 (1-rich): 0.77 X1 (2-rich) 0.23
+
+Initialization time (s): 0.00
+Communication time (s): 0.00
+Equilibrium time (s): 4.02
+Data time (s): 9.51
+
+Simulation Wtime (s): 13.54
