@@ -309,8 +309,9 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) : 
       energy += pairEnergy(i, step3d(i, j, 1));
     }
   }
+  energy /= kT;
 
-  cout << "Initial energy: " << energy/kT << endl;
+  cout << "Initial energy: " << energy << endl;
   cout << endl;
 }
 
