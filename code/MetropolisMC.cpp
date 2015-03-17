@@ -71,8 +71,8 @@ int main(int argc, char* argv[]) {
 
     start = MPI_Wtime();
 
-    // Use 8 cores to reach equilibrium
-    omp_set_num_threads(8);
+    // Use cores to reach equilibrium
+    omp_set_num_threads(4);
 
     //Run equilibration sweeps
     for (int t = 1; t <= eqSweeps; t++) {
@@ -110,8 +110,6 @@ int main(int argc, char* argv[]) {
   commDuration = end - start;
 
   start = MPI_Wtime();
-
-  omp_set_num_threads(1);
 
   //Data collection variables
   double eAvg;

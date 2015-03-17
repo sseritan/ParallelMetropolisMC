@@ -164,7 +164,7 @@ double* Simulation::calctheta() const {
   double* theta = new double [NMAX];
 
   //Run through and calculate for every lattice position
-  //TODO: parallel_for
+  #pragma omp parallel for
   for (int i = 0; i < NMAX; i++) {
     theta[i] = 0.5;
 
@@ -210,7 +210,7 @@ double* Simulation::calcTheta() const {
   //Get theta
   double* theta = calctheta();
 
-  //TODO: parallel_for
+  #pragma omp parallel for
   for (int i = 0; i < NMAX; i++) {
     Theta[i] = 0.0;
 
@@ -385,13 +385,11 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
   }
 
   //Set species 1
-  //TODO: parallel_for
   for (int i = 0; i < threshold; i++) {
     array[i].setId(1);
     array[i].setOr(1);
   }
   //Set species 2
-  //TODO: parallel_for
   for (int i = threshold; i < NMAX; i++) {
     array[i].setId(2);
     array[i].setOr(1);
@@ -404,7 +402,6 @@ Simulation::Simulation(int x, int y, int z, double T, double compA, double c) {
   srand(seed);
 
   //Initialize energy of the system
-  //TODO: Parallelize with atomic<double>?
   energy = 0.0;
   for (int i = 0; i < NMAX; i++) {
     //Calculate pairwise energy with forward pairs in each direction
@@ -456,7 +453,6 @@ double* Simulation::calcThetaHistogram() const {
 
   double* Theta = calcTheta();
 
-  //TODO: Parallelize with atomic<double>?
   for (int i = 0; i < NMAX; i++) {
     //Get index in histogram
     int index = floorf(Theta[i]*100);
@@ -467,7 +463,6 @@ double* Simulation::calcThetaHistogram() const {
   }
 
   //Normalize
-  //TODO: parallel_for
   for (int i = 0; i < 100; i++) {
     h[i] /= (double)NMAX;
   }
@@ -484,7 +479,6 @@ double* Simulation::calcX1() const {
 
   double* Theta = calcTheta();
 
-  //TODO: Parallelize with atomic<int>?
   for (int i = 0; i < NMAX; i++) {
     //Decide if in 1-rich or 2-rich phase
     if (Theta[i] >= cutoff) {
