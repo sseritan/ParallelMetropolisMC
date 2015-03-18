@@ -148,3 +148,5 @@ classSerialData/timing/scaling_500.txt
 classSerialData/timing/scaling_5000.txt
 classSerialData/timing/timing.sh
 classSerialData/~$classSerialData.xlsx
+classSerialData/MeltingTemp/energies.txt
+classSerialData/PhaseDiagram/pdInfo.txt
