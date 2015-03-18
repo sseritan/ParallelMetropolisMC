@@ -79,9 +79,6 @@ int main(int argc, char* argv[]) {
         cout << "Equilibration sweep " << t << "/" << eqSweeps;
         cout << " E/kT=" << sim->getEnergy() << endl;
       }
-    } else {
-      //1 thread for all other procs
-      omp_set_num_threads(1);
     }
 
     end = MPI_Wtime();
